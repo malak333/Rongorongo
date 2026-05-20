@@ -32,6 +32,10 @@ enum Command {
     Claims(ClaimCommand),
     /// Work with corpus observation records.
     Observations(ObservationCommand),
+    /// Generate public-safe intake templates.
+    Intake(IntakeCommand),
+    /// Check whether claims or hypotheses satisfy the promotion gate.
+    Promote(PromoteCommand),
 }
 
 #[derive(Debug, Args)]
@@ -131,6 +135,51 @@ enum ObservationSubcommand {
 }
 
 #[derive(Debug, Args)]
+struct IntakeCommand {
+    #[command(subcommand)]
+    command: IntakeSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum IntakeSubcommand {
+    /// Print a source-registry CSV row template.
+    Source(SourceTemplateArgs),
+}
+
+#[derive(Debug, Args)]
+struct SourceTemplateArgs {
+    /// Suggested next source id, e.g. SRC-006.
+    #[arg(long, default_value = "SRC-NEW")]
+    next_id: String,
+}
+
+#[derive(Debug, Args)]
+struct PromoteCommand {
+    #[command(subcommand)]
+    command: PromoteSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum PromoteSubcommand {
+    /// Check whether a claim is ready to promote into the dossier.
+    Claim(PromoteArgs),
+    /// Check whether a hypothesis is ready to promote into the dossier.
+    Hypothesis(PromoteArgs),
+}
+
+#[derive(Debug, Args)]
+struct PromoteArgs {
+    /// Repository root. Defaults to the current directory.
+    #[arg(long, default_value = ".")]
+    root: PathBuf,
+    /// Claim or hypothesis id.
+    id: String,
+    /// Emit JSON instead of a table.
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Args)]
 struct ListArgs {
     /// Repository root. Defaults to the current directory.
     #[arg(long, default_value = ".")]
@@ -180,6 +229,22 @@ impl Cli {
                     let rows =
                         read_csv::<ObservationRecord>(&args.root.join("data/observations.csv"))?;
                     print_rows(&rows, args.format.format, observation_columns)
+                }
+            },
+            Command::Intake(command) => match command.command {
+                IntakeSubcommand::Source(args) => {
+                    print!("{}", crate::workflow::source_template(&args.next_id));
+                    Ok(())
+                }
+            },
+            Command::Promote(command) => match command.command {
+                PromoteSubcommand::Claim(args) => {
+                    let check = crate::workflow::check_claim_promotion(&args.root, &args.id)?;
+                    crate::workflow::print_promotion_check(&check, args.json)
+                }
+                PromoteSubcommand::Hypothesis(args) => {
+                    let check = crate::workflow::check_hypothesis_promotion(&args.root, &args.id)?;
+                    crate::workflow::print_promotion_check(&check, args.json)
                 }
             },
         }

@@ -16,6 +16,16 @@ The goal is to keep every public claim traceable while still allowing cautious e
 5. Compare competing explanations before assigning confidence.
 6. Promote supported findings back into the dossier only after the promotion gate passes.
 
+CLI support:
+
+```sh
+cargo run -- intake source --next-id SRC-006
+cargo run -- promote claim C-003
+cargo run -- promote hypothesis H-002
+```
+
+The promotion commands are read-only checks. They intentionally do not rewrite Markdown because promotion should preserve human review and the original notebook trail.
+
 ## Review Roles
 
 - Research changes should be reviewed for source quality, citation completeness, and public-safe handling.
@@ -44,4 +54,3 @@ When multiple contributors are editing the repository:
 - Keep table row additions scoped and stable.
 - Prefer adding new IDs over renumbering existing IDs.
 - Resolve conflicts by preserving both evidence trails unless one is demonstrably obsolete.
-

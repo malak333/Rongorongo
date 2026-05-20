@@ -38,6 +38,9 @@ cargo run -- sources list
 cargo run -- hypotheses list
 cargo run -- claims list
 cargo run -- observations list
+cargo run -- intake source --next-id SRC-006
+cargo run -- promote claim C-003
+cargo run -- promote hypothesis H-002
 ```
 
 CI runs `./scripts/ci.sh`, which checks formatting, clippy, tests, build, strict validation, and the core list commands.
