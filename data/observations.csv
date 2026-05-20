@@ -1,0 +1,3 @@
+observation_id,corpus_id,source_refs,observation,reading_order_assumption,confidence,status,notes
+O-001,Text D / D,SRC-003,"Text D side ordering has multiple theoretical possibilities in modern analysis.","Reverse boustrophedon at line level; side order unresolved",Medium,active,"Use as a guardrail against unqualified sequence claims."
+O-002,Text D / D,SRC-003,"Text D is the first seeded canonical object because open-access modern palaeographic analysis is available.","Text-specific",High,promoted,"This is a corpus governance observation, not a semantic reading."

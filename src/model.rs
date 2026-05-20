@@ -53,3 +53,27 @@ pub struct HypothesisRecord {
     pub confidence: String,
     pub notes: String,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ClaimRecord {
+    pub claim_id: String,
+    pub claim: String,
+    pub claim_type: String,
+    pub evidence_refs: String,
+    pub corpus_refs: String,
+    pub confidence: String,
+    pub status: String,
+    pub notes: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ObservationRecord {
+    pub observation_id: String,
+    pub corpus_id: String,
+    pub source_refs: String,
+    pub observation: String,
+    pub reading_order_assumption: String,
+    pub confidence: String,
+    pub status: String,
+    pub notes: String,
+}

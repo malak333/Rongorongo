@@ -1,0 +1,4 @@
+claim_id,claim,claim_type,evidence_refs,corpus_refs,confidence,status,notes
+C-001,"Rongorongo remains undeciphered.",state-of-field,"SRC-003;SRC-005","",High,promoted,"Public-facing project boundary: do not claim fluent readings."
+C-002,"Accurate palaeographic transcription is a prerequisite for credible decipherment attempts.",method,"SRC-003","Text D / D",High,promoted,"This supports the repository's validation-first production scope."
+C-003,"Rapa Nui / Eastern Polynesian should be the default linguistic comparison frame.",project-decision,"SRC-003","",Medium,active,"Comparative similarity remains a constraint, not proof."

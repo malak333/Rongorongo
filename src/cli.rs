@@ -1,4 +1,7 @@
-use crate::model::{CorpusObject, HypothesisRecord, OutputFormat, SourceRecord};
+use crate::audit::AuditReport;
+use crate::model::{
+    ClaimRecord, CorpusObject, HypothesisRecord, ObservationRecord, OutputFormat, SourceRecord,
+};
 use crate::validate::{self, ValidationReport};
 use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
@@ -15,6 +18,8 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Run the full research-governance audit, including cross-reference checks.
+    Audit(AuditArgs),
     /// Validate required files and supported CSV schemas.
     Validate(ValidateArgs),
     /// Work with the canonical corpus index.
@@ -23,6 +28,10 @@ enum Command {
     Sources(SourceCommand),
     /// Work with the decipherment hypothesis register.
     Hypotheses(HypothesisCommand),
+    /// Work with the evidence claim register.
+    Claims(ClaimCommand),
+    /// Work with corpus observation records.
+    Observations(ObservationCommand),
 }
 
 #[derive(Debug, Args)]
@@ -40,6 +49,18 @@ struct ValidateArgs {
     /// Fail on placeholders and warnings. This is intended for CI and release gates.
     #[arg(long)]
     strict: bool,
+}
+
+#[derive(Debug, Args)]
+struct AuditArgs {
+    /// Repository root. Defaults to the current directory.
+    #[arg(long, default_value = ".")]
+    root: PathBuf,
+    /// Fail on placeholders and warnings. This is intended for CI and release gates.
+    #[arg(long)]
+    strict: bool,
+    #[command(flatten)]
+    format: FormatArgs,
 }
 
 #[derive(Debug, Args)]
@@ -86,6 +107,30 @@ enum HypothesisSubcommand {
 }
 
 #[derive(Debug, Args)]
+struct ClaimCommand {
+    #[command(subcommand)]
+    command: ClaimSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum ClaimSubcommand {
+    /// List evidence claims from data/claims.csv.
+    List(ListArgs),
+}
+
+#[derive(Debug, Args)]
+struct ObservationCommand {
+    #[command(subcommand)]
+    command: ObservationSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum ObservationSubcommand {
+    /// List corpus observations from data/observations.csv.
+    List(ListArgs),
+}
+
+#[derive(Debug, Args)]
 struct ListArgs {
     /// Repository root. Defaults to the current directory.
     #[arg(long, default_value = ".")]
@@ -97,6 +142,10 @@ struct ListArgs {
 impl Cli {
     pub fn run(self) -> Result<()> {
         match self.command {
+            Command::Audit(args) => print_audit(
+                crate::audit::audit_workspace(&args.root, args.strict)?,
+                args.format.format,
+            ),
             Command::Validate(args) => {
                 print_validation(validate::validate_workspace(&args.root, args.strict)?)
             }
@@ -118,6 +167,19 @@ impl Cli {
                     let rows =
                         read_csv::<HypothesisRecord>(&args.root.join("data/hypotheses.csv"))?;
                     print_rows(&rows, args.format.format, hypothesis_columns)
+                }
+            },
+            Command::Claims(command) => match command.command {
+                ClaimSubcommand::List(args) => {
+                    let rows = read_csv::<ClaimRecord>(&args.root.join("data/claims.csv"))?;
+                    print_rows(&rows, args.format.format, claim_columns)
+                }
+            },
+            Command::Observations(command) => match command.command {
+                ObservationSubcommand::List(args) => {
+                    let rows =
+                        read_csv::<ObservationRecord>(&args.root.join("data/observations.csv"))?;
+                    print_rows(&rows, args.format.format, observation_columns)
                 }
             },
         }
@@ -150,6 +212,37 @@ fn print_validation(report: ValidationReport) -> Result<()> {
         Ok(())
     } else {
         anyhow::bail!("workspace validation failed")
+    }
+}
+
+fn print_audit(report: AuditReport, format: OutputFormat) -> Result<()> {
+    match format {
+        OutputFormat::Json => {
+            println!("{}", serde_json::to_string_pretty(&report.summary)?);
+        }
+        OutputFormat::Table => {
+            println!("Audit summary");
+            println!("corpus_objects\t{}", report.summary.corpus_objects);
+            println!("sources\t{}", report.summary.sources);
+            println!("claims\t{}", report.summary.claims);
+            println!("observations\t{}", report.summary.observations);
+            println!("hypotheses\t{}", report.summary.hypotheses);
+            println!("promoted_claims\t{}", report.summary.promoted_claims);
+            println!("active_hypotheses\t{}", report.summary.active_hypotheses);
+        }
+    }
+
+    println!(
+        "validated {} files with {} warning(s) and {} error(s)",
+        report.validation.checked_files,
+        report.validation.warning_count,
+        report.validation.error_count
+    );
+
+    if report.validation.error_count == 0 {
+        Ok(())
+    } else {
+        anyhow::bail!("workspace audit failed")
     }
 }
 
@@ -208,5 +301,25 @@ fn hypothesis_columns(row: &HypothesisRecord) -> Vec<(&'static str, String)> {
         ("claim", row.claim.clone()),
         ("status", row.status.clone()),
         ("confidence", row.confidence.clone()),
+    ]
+}
+
+fn claim_columns(row: &ClaimRecord) -> Vec<(&'static str, String)> {
+    vec![
+        ("claim_id", row.claim_id.clone()),
+        ("claim", row.claim.clone()),
+        ("type", row.claim_type.clone()),
+        ("status", row.status.clone()),
+        ("confidence", row.confidence.clone()),
+    ]
+}
+
+fn observation_columns(row: &ObservationRecord) -> Vec<(&'static str, String)> {
+    vec![
+        ("observation_id", row.observation_id.clone()),
+        ("corpus_id", row.corpus_id.clone()),
+        ("status", row.status.clone()),
+        ("confidence", row.confidence.clone()),
+        ("source_refs", row.source_refs.clone()),
     ]
 }

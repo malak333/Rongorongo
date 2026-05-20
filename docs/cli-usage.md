@@ -7,9 +7,10 @@ The repository includes a Rust CLI for validating research artifacts and listing
 ```sh
 cargo run -- validate
 cargo run -- validate --strict
+cargo run -- audit --strict
 ```
 
-Use `validate` during drafting and `validate --strict` for CI/release gates. Strict mode fails on scaffold placeholders, malformed CSV schemas, duplicate IDs, and invalid confidence values.
+Use `validate` during drafting and `validate --strict` for schema gates. Use `audit --strict` for the full production gate because it also checks source/corpus/claim/hypothesis cross-references.
 
 ## Listing Commands
 
@@ -18,6 +19,8 @@ cargo run -- corpus list
 cargo run -- corpus list --format json
 cargo run -- sources list
 cargo run -- hypotheses list
+cargo run -- claims list
+cargo run -- observations list
 ```
 
 The table output is for humans. JSON output is available where CI or downstream scripts need structured data.
