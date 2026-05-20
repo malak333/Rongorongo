@@ -1,6 +1,7 @@
 use crate::audit::AuditReport;
 use crate::model::{
-    ClaimRecord, CorpusObject, HypothesisRecord, ObservationRecord, OutputFormat, SourceRecord,
+    ClaimRecord, CorpusObject, HypothesisRecord, ObservationRecord, OutputFormat, ReadingRecord,
+    SequenceRecord, SourceRecord,
 };
 use crate::validate::{self, ValidationReport};
 use anyhow::{Context, Result};
@@ -32,6 +33,10 @@ enum Command {
     Claims(ClaimCommand),
     /// Work with corpus observation records.
     Observations(ObservationCommand),
+    /// Work with repeated sequence records.
+    Sequences(SequenceCommand),
+    /// Work with tentative semantic reading records.
+    Readings(ReadingCommand),
     /// Generate public-safe intake templates.
     Intake(IntakeCommand),
     /// Check whether claims or hypotheses satisfy the promotion gate.
@@ -50,7 +55,7 @@ struct ValidateArgs {
     /// Repository root. Defaults to the current directory.
     #[arg(long, default_value = ".")]
     root: PathBuf,
-    /// Fail on placeholders and warnings. This is intended for CI and release gates.
+    /// Fail on placeholders and warnings. This is intended for local release gates.
     #[arg(long)]
     strict: bool,
 }
@@ -60,7 +65,7 @@ struct AuditArgs {
     /// Repository root. Defaults to the current directory.
     #[arg(long, default_value = ".")]
     root: PathBuf,
-    /// Fail on placeholders and warnings. This is intended for CI and release gates.
+    /// Fail on placeholders and warnings. This is intended for local release gates.
     #[arg(long)]
     strict: bool,
     #[command(flatten)]
@@ -131,6 +136,30 @@ struct ObservationCommand {
 #[derive(Debug, Subcommand)]
 enum ObservationSubcommand {
     /// List corpus observations from data/observations.csv.
+    List(ListArgs),
+}
+
+#[derive(Debug, Args)]
+struct SequenceCommand {
+    #[command(subcommand)]
+    command: SequenceSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum SequenceSubcommand {
+    /// List repeated sequence records from data/sequences.csv.
+    List(ListArgs),
+}
+
+#[derive(Debug, Args)]
+struct ReadingCommand {
+    #[command(subcommand)]
+    command: ReadingSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum ReadingSubcommand {
+    /// List tentative semantic reading records from data/readings.csv.
     List(ListArgs),
 }
 
@@ -231,6 +260,18 @@ impl Cli {
                     print_rows(&rows, args.format.format, observation_columns)
                 }
             },
+            Command::Sequences(command) => match command.command {
+                SequenceSubcommand::List(args) => {
+                    let rows = read_csv::<SequenceRecord>(&args.root.join("data/sequences.csv"))?;
+                    print_rows(&rows, args.format.format, sequence_columns)
+                }
+            },
+            Command::Readings(command) => match command.command {
+                ReadingSubcommand::List(args) => {
+                    let rows = read_csv::<ReadingRecord>(&args.root.join("data/readings.csv"))?;
+                    print_rows(&rows, args.format.format, reading_columns)
+                }
+            },
             Command::Intake(command) => match command.command {
                 IntakeSubcommand::Source(args) => {
                     print!("{}", crate::workflow::source_template(&args.next_id));
@@ -284,6 +325,10 @@ fn print_audit(report: AuditReport, format: OutputFormat) -> Result<()> {
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string_pretty(&report.summary)?);
+            if report.validation.error_count == 0 {
+                return Ok(());
+            }
+            anyhow::bail!("workspace audit failed")
         }
         OutputFormat::Table => {
             println!("Audit summary");
@@ -291,9 +336,17 @@ fn print_audit(report: AuditReport, format: OutputFormat) -> Result<()> {
             println!("sources\t{}", report.summary.sources);
             println!("claims\t{}", report.summary.claims);
             println!("observations\t{}", report.summary.observations);
+            println!("sequences\t{}", report.summary.sequences);
+            println!("readings\t{}", report.summary.readings);
             println!("hypotheses\t{}", report.summary.hypotheses);
             println!("promoted_claims\t{}", report.summary.promoted_claims);
             println!("active_hypotheses\t{}", report.summary.active_hypotheses);
+        }
+    }
+
+    for message in &report.validation.messages {
+        if !matches!(message.level, crate::validate::ValidationLevel::Ok) {
+            println!("[{}] {}", message.level, message.message);
         }
     }
 
@@ -386,5 +439,25 @@ fn observation_columns(row: &ObservationRecord) -> Vec<(&'static str, String)> {
         ("status", row.status.clone()),
         ("confidence", row.confidence.clone()),
         ("source_refs", row.source_refs.clone()),
+    ]
+}
+
+fn sequence_columns(row: &SequenceRecord) -> Vec<(&'static str, String)> {
+    vec![
+        ("sequence_id", row.sequence_id.clone()),
+        ("sequence", row.sequence.clone()),
+        ("status", row.status.clone()),
+        ("confidence", row.confidence.clone()),
+        ("corpus_refs", row.corpus_refs.clone()),
+    ]
+}
+
+fn reading_columns(row: &ReadingRecord) -> Vec<(&'static str, String)> {
+    vec![
+        ("reading_id", row.reading_id.clone()),
+        ("sign_or_sequence", row.sign_or_sequence.clone()),
+        ("meaning", row.proposed_meaning.clone()),
+        ("status", row.status.clone()),
+        ("confidence", row.confidence.clone()),
     ]
 }

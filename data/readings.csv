@@ -1,0 +1,2 @@
+reading_id,sign_or_sequence,proposed_meaning,evidence_refs,corpus_refs,observation_refs,alternative_explanations,confidence,status,notes
+R-001,none,none-proposed,SRC-003,corpus-wide,O-001,"No semantic reading is currently supported; structural and palaeographic explanations remain prior.",Low,draft,"Documents the explicit non-claim so release output cannot imply a decipherment."

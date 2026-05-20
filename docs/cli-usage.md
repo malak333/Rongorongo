@@ -21,12 +21,14 @@ cargo run -- sources list
 cargo run -- hypotheses list
 cargo run -- claims list
 cargo run -- observations list
+cargo run -- sequences list
+cargo run -- readings list
 cargo run -- intake source --next-id SRC-006
 cargo run -- promote claim C-003
 cargo run -- promote hypothesis H-002
 ```
 
-The table output is for humans. JSON output is available where CI or downstream scripts need structured data.
+The table output is for humans. JSON output is available where local scripts or downstream tooling need structured data. `./scripts/ci.sh` is the complete local CLI gate; this repository intentionally does not use GitHub Actions.
 
 ## Intake And Promotion
 

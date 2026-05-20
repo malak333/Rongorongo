@@ -1,4 +1,4 @@
-use crate::model::{ClaimRecord, HypothesisRecord, SourceRecord};
+use crate::model::{ClaimRecord, CorpusObject, HypothesisRecord, ObservationRecord, SourceRecord};
 use anyhow::{bail, Context, Result};
 use serde::Serialize;
 use std::path::Path;
@@ -20,13 +20,14 @@ pub struct PromotionCheckItem {
 
 pub fn source_template(next_id: &str) -> String {
     format!(
-        "source_id,citation,year,source_type,contribution,limits,reliability,access,notes\n{next_id},\"Author, Title\",YYYY,peer-reviewed-open-access,\"What this source contributes\",\"Known limits\",Medium,open-access,\"Public-safe notes only\"\n"
+        "source_id,citation,year,source_type,contribution,limits,reliability,access,url,accessed,notes\n{next_id},\"Author, Title\",YYYY,peer-reviewed-open-access,\"What this source contributes\",\"Known limits\",Medium,open-access,https://example.invalid,YYYY-MM-DD,\"Public-safe notes only\"\n"
     )
 }
 
 pub fn check_claim_promotion(root: &Path, claim_id: &str) -> Result<PromotionCheck> {
     let claims = read_csv::<ClaimRecord>(&root.join("data/claims.csv"))?;
     let sources = read_csv::<SourceRecord>(&root.join("data/source-registry.csv"))?;
+    let corpus = read_csv::<CorpusObject>(&root.join("data/corpus-index.csv"))?;
     let claim = claims
         .iter()
         .find(|claim| claim.claim_id == claim_id)
@@ -34,6 +35,10 @@ pub fn check_claim_promotion(root: &Path, claim_id: &str) -> Result<PromotionChe
     let source_ids: std::collections::HashSet<&str> = sources
         .iter()
         .map(|source| source.source_id.as_str())
+        .collect();
+    let corpus_ids: std::collections::HashSet<&str> = corpus
+        .iter()
+        .map(|object| object.catalog_id.as_str())
         .collect();
 
     let checks = vec![
@@ -48,8 +53,18 @@ pub fn check_claim_promotion(root: &Path, claim_id: &str) -> Result<PromotionChe
             "all evidence_refs must exist in data/source-registry.csv",
         ),
         check(
+            "has corpus scope",
+            !claim.corpus_refs.trim().is_empty(),
+            "claim must define corpus_refs or corpus-wide scope",
+        ),
+        check(
+            "corpus refs exist",
+            corpus_refs_exist(&claim.corpus_refs, &corpus_ids),
+            "all corpus_refs must exist in data/corpus-index.csv or use corpus-wide",
+        ),
+        check(
             "confidence is not Low",
-            !claim.confidence.eq_ignore_ascii_case("Low"),
+            is_promotable_confidence(&claim.confidence),
             "promoted claims require Medium or High confidence",
         ),
         check(
@@ -70,6 +85,8 @@ pub fn check_claim_promotion(root: &Path, claim_id: &str) -> Result<PromotionChe
 pub fn check_hypothesis_promotion(root: &Path, hypothesis_id: &str) -> Result<PromotionCheck> {
     let hypotheses = read_csv::<HypothesisRecord>(&root.join("data/hypotheses.csv"))?;
     let sources = read_csv::<SourceRecord>(&root.join("data/source-registry.csv"))?;
+    let corpus = read_csv::<CorpusObject>(&root.join("data/corpus-index.csv"))?;
+    let observations = read_csv::<ObservationRecord>(&root.join("data/observations.csv"))?;
     let hypothesis = hypotheses
         .iter()
         .find(|hypothesis| hypothesis.hypothesis_id == hypothesis_id)
@@ -77,6 +94,14 @@ pub fn check_hypothesis_promotion(root: &Path, hypothesis_id: &str) -> Result<Pr
     let source_ids: std::collections::HashSet<&str> = sources
         .iter()
         .map(|source| source.source_id.as_str())
+        .collect();
+    let corpus_ids: std::collections::HashSet<&str> = corpus
+        .iter()
+        .map(|object| object.catalog_id.as_str())
+        .collect();
+    let observation_ids: std::collections::HashSet<&str> = observations
+        .iter()
+        .map(|observation| observation.observation_id.as_str())
         .collect();
 
     let checks = vec![
@@ -87,10 +112,18 @@ pub fn check_hypothesis_promotion(root: &Path, hypothesis_id: &str) -> Result<Pr
         ),
         check(
             "evidence cites known source",
-            source_ids
-                .iter()
-                .any(|source_id| hypothesis.evidence.contains(*source_id)),
-            "hypothesis evidence must cite at least one known source id",
+            refs_exist(&hypothesis.evidence_refs, &source_ids),
+            "hypothesis evidence_refs must cite known source ids",
+        ),
+        check(
+            "corpus refs exist",
+            corpus_refs_exist(&hypothesis.corpus_refs, &corpus_ids),
+            "hypothesis corpus_refs must exist in data/corpus-index.csv or use corpus-wide",
+        ),
+        check(
+            "observation refs exist",
+            refs_exist(&hypothesis.observation_refs, &observation_ids),
+            "hypothesis observation_refs must cite known observation ids",
         ),
         check(
             "has test",
@@ -99,7 +132,7 @@ pub fn check_hypothesis_promotion(root: &Path, hypothesis_id: &str) -> Result<Pr
         ),
         check(
             "confidence is not Low",
-            !hypothesis.confidence.eq_ignore_ascii_case("Low"),
+            is_promotable_confidence(&hypothesis.confidence),
             "promotion requires Medium or High confidence",
         ),
     ];
@@ -153,6 +186,22 @@ fn refs_exist(refs: &str, known: &std::collections::HashSet<&str>) -> bool {
         .filter(|value| !value.is_empty())
         .collect();
     !refs.is_empty() && refs.iter().all(|value| known.contains(value))
+}
+
+fn corpus_refs_exist(refs: &str, known: &std::collections::HashSet<&str>) -> bool {
+    let refs: Vec<&str> = refs
+        .split(';')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .collect();
+    !refs.is_empty()
+        && refs
+            .iter()
+            .all(|value| *value == "corpus-wide" || known.contains(value))
+}
+
+fn is_promotable_confidence(confidence: &str) -> bool {
+    matches!(confidence, "High" | "Medium")
 }
 
 fn check(name: &str, passed: bool, detail: &str) -> PromotionCheckItem {

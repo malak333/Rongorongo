@@ -9,7 +9,7 @@ The E2E tests in `tests/e2e_cli.rs` verify that a reviewer can trace this path:
 1. Strict validation passes for the public workspace.
 2. The full audit checks schema and cross-reference integrity.
 3. Corpus, source, hypothesis, claim, and observation registers can be listed.
-4. JSON output is available for CI consumers.
+4. JSON output is available for local scripts or downstream tooling.
 5. Source intake emits a public-safe source-registry row template.
 6. Claim and hypothesis promotion gates pass for known seed records.
 
@@ -21,9 +21,9 @@ Fixture data must be:
 - Small enough to audit in code review.
 - Free of copyrighted scans, long source excerpts, or private notes.
 
-## CI Expectations
+## Local Gate Expectations
 
-CI runs:
+The local release gate is:
 
 ```sh
 ./scripts/ci.sh

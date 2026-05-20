@@ -1,2 +1,2 @@
-object_name,catalog_id,current_location,sides,transcription_source,source_reliability,inclusion_confidence,notes
-Echancree tablet,Text D / D,"Congregation of the Sacred Hearts of Jesus and Mary, Rome",Da; Db,SRC-003,High,High,"Open-access 2022 study presents state-of-the-art analysis and a new transcription basis for Text D; use as the first seeded canonical object."
+object_name,catalog_id,current_location,sides,transcription_source,source_reliability,inclusion_confidence,reference_url,notes
+Echancree tablet,Text D / D,"Congregation of the Sacred Hearts of Jesus and Mary, Rome",Da; Db,SRC-003,High,High,https://academic.oup.com/dsh/article/37/2/497/6387816,"Open-access 2022 study presents state-of-the-art analysis and a new transcription basis for Text D; use as the first seeded canonical object."

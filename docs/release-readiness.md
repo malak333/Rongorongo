@@ -30,7 +30,8 @@ Related production-readiness docs:
 - `decipherment-notebook.md` contains hypotheses, tests, tentative readings, and
   rejected ideas.
 - `data/source-registry.csv`, `data/corpus-index.csv`, `data/claims.csv`,
-  `data/observations.csv`, and `data/hypotheses.csv` pass `audit --strict`.
+  `data/observations.csv`, `data/sequences.csv`, `data/readings.csv`, and
+  `data/hypotheses.csv` pass `audit --strict`.
 - Dossier conclusions are traceable to cited sources or explicit corpus
   observations.
 - Low-confidence ideas are not presented as conclusions.

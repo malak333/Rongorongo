@@ -1,0 +1,2 @@
+sequence_id,sequence,corpus_refs,source_refs,observation_refs,position_pattern,possible_function,confidence,status,notes
+S-001,none-recorded,corpus-wide,SRC-003,O-001,not-yet-analyzed,none-proposed,Low,draft,"Placeholder-free guardrail row: no repeated sequence has been promoted yet."
