@@ -32,9 +32,12 @@ The project has two phases:
 
 ```sh
 cargo run -- validate --strict
+cargo run -- audit --strict
 cargo run -- corpus list
 cargo run -- sources list
 cargo run -- hypotheses list
+cargo run -- claims list
+cargo run -- observations list
 ```
 
 CI runs `./scripts/ci.sh`, which checks formatting, clippy, tests, build, strict validation, and the core list commands.

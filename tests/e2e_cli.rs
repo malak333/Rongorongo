@@ -33,6 +33,20 @@ fn e2e_lists_seed_corpus_source_and_hypothesis() {
         .assert()
         .success()
         .stdout(predicate::str::contains("H-001"));
+
+    let mut claims = Command::cargo_bin("rongorongo").unwrap();
+    claims
+        .args(["claims", "list"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("C-001"));
+
+    let mut observations = Command::cargo_bin("rongorongo").unwrap();
+    observations
+        .args(["observations", "list"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("O-001"));
 }
 
 #[test]
@@ -44,4 +58,15 @@ fn e2e_json_output_is_available_for_ci_consumers() {
         .success()
         .stdout(predicate::str::contains("\"object_name\""))
         .stdout(predicate::str::contains("\"Echancree tablet\""));
+}
+
+#[test]
+fn e2e_audit_reports_cross_reference_summary() {
+    let mut command = Command::cargo_bin("rongorongo").unwrap();
+    command
+        .args(["audit", "--strict"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Audit summary"))
+        .stdout(predicate::str::contains("promoted_claims"));
 }
