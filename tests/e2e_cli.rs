@@ -70,3 +70,28 @@ fn e2e_audit_reports_cross_reference_summary() {
         .stdout(predicate::str::contains("Audit summary"))
         .stdout(predicate::str::contains("promoted_claims"));
 }
+
+#[test]
+fn e2e_intake_template_and_promotion_gates_work() {
+    let mut intake = Command::cargo_bin("rongorongo").unwrap();
+    intake
+        .args(["intake", "source", "--next-id", "SRC-006"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("SRC-006"))
+        .stdout(predicate::str::contains("source_id,citation"));
+
+    let mut claim = Command::cargo_bin("rongorongo").unwrap();
+    claim
+        .args(["promote", "claim", "C-003"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ready=true"));
+
+    let mut hypothesis = Command::cargo_bin("rongorongo").unwrap();
+    hypothesis
+        .args(["promote", "hypothesis", "H-002", "--json"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("\"ready\": true"));
+}

@@ -21,9 +21,18 @@ cargo run -- sources list
 cargo run -- hypotheses list
 cargo run -- claims list
 cargo run -- observations list
+cargo run -- intake source --next-id SRC-006
+cargo run -- promote claim C-003
+cargo run -- promote hypothesis H-002
 ```
 
 The table output is for humans. JSON output is available where CI or downstream scripts need structured data.
+
+## Intake And Promotion
+
+`intake source` prints a public-safe CSV row template for `data/source-registry.csv`.
+
+`promote claim` and `promote hypothesis` do not modify files. They check whether the selected item has the evidence, source references, tests, and confidence level needed before a maintainer manually promotes it into the dossier.
 
 ## Safety Contract
 
