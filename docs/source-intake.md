@@ -10,6 +10,15 @@ Use one source at a time. Do not promote a claim until it has a source row and a
 4. Move only testable questions into `decipherment-notebook.md`.
 5. If a hypothesis survives checks, promote the conclusion back into `research-dossier.md`.
 
+CLI helpers:
+
+```sh
+cargo run -- intake source --next-id SRC-006
+cargo run -- audit --strict
+```
+
+Use the intake template as a starting row, then edit it manually with the real citation, contribution, limits, reliability, and public-safe notes.
+
 ## Source Reliability
 
 - `High`: peer-reviewed work, museum records, primary corpus catalogues, or directly inspectable corpus evidence.

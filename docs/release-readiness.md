@@ -29,6 +29,8 @@ Related production-readiness docs:
   labels.
 - `decipherment-notebook.md` contains hypotheses, tests, tentative readings, and
   rejected ideas.
+- `data/source-registry.csv`, `data/corpus-index.csv`, `data/claims.csv`,
+  `data/observations.csv`, and `data/hypotheses.csv` pass `audit --strict`.
 - Dossier conclusions are traceable to cited sources or explicit corpus
   observations.
 - Low-confidence ideas are not presented as conclusions.
@@ -50,6 +52,7 @@ Run these from the repository root:
 
 ```sh
 ./scripts/ci.sh
+cargo run -- audit --strict
 git status --short
 find . -maxdepth 3 -type f \( -name '.env*' -o -name '*secret*' -o -name '*token*' -o -name '*.pem' -o -name '*.p12' \) -print
 find . -maxdepth 3 -type f \( -name '*.pdf' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.tif' -o -name '*.tiff' -o -name '*.webp' \) -print

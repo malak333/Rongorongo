@@ -1,30 +1,17 @@
 # E2E Strategy
 
-The current repository has no application runtime, service backend, or executable CLI. E2E coverage is therefore documentation-level.
+The repository has automated CLI E2E coverage for the full research-governance workflow. There is no service backend or browser runtime.
 
-## Current E2E Path
+## Automated E2E Path
 
-A reviewer should be able to trace this path manually:
+The E2E tests in `tests/e2e_cli.rs` verify that a reviewer can trace this path:
 
-1. A source is registered in `research-dossier.md`.
-2. A corpus object is listed in `data/corpus-index.csv`.
-3. A small claim or observation receives a stable ID.
-4. A hypothesis in `decipherment-notebook.md` cites the claim or observation.
-5. A supported result is promoted back to the dossier with confidence and open risks.
-6. Release notes summarize the promoted result without relying on private files.
-
-This is the minimum end-to-end readiness path for research documentation.
-
-## Future Automated E2E
-
-When tooling is added, E2E tests should use fixture data that is safe to publish. Tests should verify:
-
-- Source registry parsing.
-- Corpus index parsing.
-- Stable ID references across dossier and notebook files.
-- Promotion gates for conclusions.
-- Public-safe report generation.
-- Nonzero failures for missing evidence links or unsafe source content.
+1. Strict validation passes for the public workspace.
+2. The full audit checks schema and cross-reference integrity.
+3. Corpus, source, hypothesis, claim, and observation registers can be listed.
+4. JSON output is available for CI consumers.
+5. Source intake emits a public-safe source-registry row template.
+6. Claim and hypothesis promotion gates pass for known seed records.
 
 ## Test Data Rules
 
@@ -36,12 +23,10 @@ Fixture data must be:
 
 ## CI Expectations
 
-Once a CLI exists, CI should run:
+CI runs:
 
 ```sh
-rongorongo validate --strict
-rongorongo report --public-safe --dry-run
+./scripts/ci.sh
 ```
 
-These command names are a proposed contract, not current repository commands.
-
+That script executes formatting, clippy, unit tests, E2E tests, build, strict validation, full audit, list commands, intake template generation, and promotion-gate checks.
