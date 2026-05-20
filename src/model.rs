@@ -27,6 +27,7 @@ pub struct CorpusObject {
     pub transcription_source: String,
     pub source_reliability: String,
     pub inclusion_confidence: String,
+    pub reference_url: String,
     pub notes: String,
 }
 
@@ -40,6 +41,8 @@ pub struct SourceRecord {
     pub limits: String,
     pub reliability: String,
     pub access: String,
+    pub url: String,
+    pub accessed: String,
     pub notes: String,
 }
 
@@ -48,6 +51,9 @@ pub struct HypothesisRecord {
     pub hypothesis_id: String,
     pub claim: String,
     pub evidence: String,
+    pub evidence_refs: String,
+    pub corpus_refs: String,
+    pub observation_refs: String,
     pub test: String,
     pub status: String,
     pub confidence: String,
@@ -73,6 +79,34 @@ pub struct ObservationRecord {
     pub source_refs: String,
     pub observation: String,
     pub reading_order_assumption: String,
+    pub confidence: String,
+    pub status: String,
+    pub notes: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SequenceRecord {
+    pub sequence_id: String,
+    pub sequence: String,
+    pub corpus_refs: String,
+    pub source_refs: String,
+    pub observation_refs: String,
+    pub position_pattern: String,
+    pub possible_function: String,
+    pub confidence: String,
+    pub status: String,
+    pub notes: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ReadingRecord {
+    pub reading_id: String,
+    pub sign_or_sequence: String,
+    pub proposed_meaning: String,
+    pub evidence_refs: String,
+    pub corpus_refs: String,
+    pub observation_refs: String,
+    pub alternative_explanations: String,
     pub confidence: String,
     pub status: String,
     pub notes: String,

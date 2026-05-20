@@ -1,4 +1,7 @@
-use crate::model::{ClaimRecord, CorpusObject, HypothesisRecord, ObservationRecord, SourceRecord};
+use crate::model::{
+    ClaimRecord, CorpusObject, HypothesisRecord, ObservationRecord, ReadingRecord, SequenceRecord,
+    SourceRecord,
+};
 use crate::validate::{ValidationLevel, ValidationMessage, ValidationReport};
 use anyhow::{Context, Result};
 use serde::Serialize;
@@ -11,6 +14,8 @@ pub struct AuditSummary {
     pub sources: usize,
     pub claims: usize,
     pub observations: usize,
+    pub sequences: usize,
+    pub readings: usize,
     pub hypotheses: usize,
     pub promoted_claims: usize,
     pub active_hypotheses: usize,
@@ -30,6 +35,8 @@ pub fn audit_workspace(root: &Path, strict: bool) -> Result<AuditReport> {
     let hypotheses = read_csv::<HypothesisRecord>(&root.join("data/hypotheses.csv"))?;
     let claims = read_csv::<ClaimRecord>(&root.join("data/claims.csv"))?;
     let observations = read_csv::<ObservationRecord>(&root.join("data/observations.csv"))?;
+    let sequences = read_csv::<SequenceRecord>(&root.join("data/sequences.csv"))?;
+    let readings = read_csv::<ReadingRecord>(&root.join("data/readings.csv"))?;
 
     let source_ids: HashSet<&str> = sources
         .iter()
@@ -38,6 +45,10 @@ pub fn audit_workspace(root: &Path, strict: bool) -> Result<AuditReport> {
     let corpus_ids: HashSet<&str> = corpus
         .iter()
         .map(|object| object.catalog_id.as_str())
+        .collect();
+    let observation_ids: HashSet<&str> = observations
+        .iter()
+        .map(|observation| observation.observation_id.as_str())
         .collect();
 
     for object in &corpus {
@@ -64,6 +75,7 @@ pub fn audit_workspace(root: &Path, strict: bool) -> Result<AuditReport> {
             &claim.claim_id,
             &claim.corpus_refs,
             &corpus_ids,
+            true,
         );
     }
 
@@ -85,13 +97,84 @@ pub fn audit_workspace(root: &Path, strict: bool) -> Result<AuditReport> {
     }
 
     for hypothesis in &hypotheses {
-        check_text_has_known_ref(
+        check_refs(
             &mut validation,
-            "hypothesis evidence",
+            "hypothesis evidence_refs",
             &hypothesis.hypothesis_id,
-            &hypothesis.evidence,
+            &hypothesis.evidence_refs,
             &source_ids,
         );
+        check_corpus_refs(
+            &mut validation,
+            "hypothesis corpus_refs",
+            &hypothesis.hypothesis_id,
+            &hypothesis.corpus_refs,
+            &corpus_ids,
+        );
+        check_refs(
+            &mut validation,
+            "hypothesis observation_refs",
+            &hypothesis.hypothesis_id,
+            &hypothesis.observation_refs,
+            &observation_ids,
+        );
+    }
+
+    for sequence in &sequences {
+        check_refs(
+            &mut validation,
+            "sequence source_refs",
+            &sequence.sequence_id,
+            &sequence.source_refs,
+            &source_ids,
+        );
+        check_corpus_refs(
+            &mut validation,
+            "sequence corpus_refs",
+            &sequence.sequence_id,
+            &sequence.corpus_refs,
+            &corpus_ids,
+        );
+        check_refs(
+            &mut validation,
+            "sequence observation_refs",
+            &sequence.sequence_id,
+            &sequence.observation_refs,
+            &observation_ids,
+        );
+    }
+
+    for reading in &readings {
+        check_refs(
+            &mut validation,
+            "reading evidence_refs",
+            &reading.reading_id,
+            &reading.evidence_refs,
+            &source_ids,
+        );
+        check_corpus_refs(
+            &mut validation,
+            "reading corpus_refs",
+            &reading.reading_id,
+            &reading.corpus_refs,
+            &corpus_ids,
+        );
+        check_refs(
+            &mut validation,
+            "reading observation_refs",
+            &reading.reading_id,
+            &reading.observation_refs,
+            &observation_ids,
+        );
+        if reading.alternative_explanations.trim().is_empty() {
+            push_error(
+                &mut validation,
+                format!(
+                    "reading {} is missing alternative explanations",
+                    reading.reading_id
+                ),
+            );
+        }
     }
 
     let summary = AuditSummary {
@@ -99,6 +182,8 @@ pub fn audit_workspace(root: &Path, strict: bool) -> Result<AuditReport> {
         sources: sources.len(),
         claims: claims.len(),
         observations: observations.len(),
+        sequences: sequences.len(),
+        readings: readings.len(),
         hypotheses: hypotheses.len(),
         promoted_claims: claims
             .iter()
@@ -161,33 +246,50 @@ fn check_refs(
     }
 }
 
-fn check_optional_refs(
+fn check_corpus_refs(
     report: &mut ValidationReport,
     label: &str,
     subject: &str,
     refs: &str,
     known: &HashSet<&str>,
 ) {
-    if refs.trim().is_empty() {
+    let values: Vec<&str> = refs
+        .split(';')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .collect();
+
+    if values.is_empty() {
+        push_error(report, format!("{label} for {subject} is empty"));
         return;
     }
-    check_refs(report, label, subject, refs, known);
+
+    for value in values {
+        if value != "corpus-wide" && !known.contains(value) {
+            push_error(
+                report,
+                format!("{label} for {subject} references unknown id {value}"),
+            );
+        }
+    }
 }
 
-fn check_text_has_known_ref(
+fn check_optional_refs(
     report: &mut ValidationReport,
     label: &str,
     subject: &str,
-    text: &str,
+    refs: &str,
     known: &HashSet<&str>,
+    allow_corpus_wide: bool,
 ) {
-    if known.iter().any(|source_id| text.contains(*source_id)) {
+    if refs.trim().is_empty() {
+        push_error(report, format!("{label} for {subject} is empty"));
         return;
     }
-    push_error(
-        report,
-        format!("{label} for {subject} does not cite a known source id"),
-    );
+    if allow_corpus_wide && refs.trim() == "corpus-wide" {
+        return;
+    }
+    check_refs(report, label, subject, refs, known);
 }
 
 fn push_error(report: &mut ValidationReport, message: String) {

@@ -12,6 +12,8 @@ cargo run -- sources list
 cargo run -- hypotheses list
 cargo run -- claims list
 cargo run -- observations list
+cargo run -- sequences list
+cargo run -- readings list
 cargo run -- intake source --next-id SRC-006
 cargo run -- promote claim C-003
 cargo run -- promote hypothesis H-002

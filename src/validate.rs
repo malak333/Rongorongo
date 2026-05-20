@@ -60,6 +60,8 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
         "data/hypotheses.csv",
         "data/claims.csv",
         "data/observations.csv",
+        "data/sequences.csv",
+        "data/readings.csv",
     ] {
         check_required_file(&mut report, &root.join(required), required, strict)?;
     }
@@ -75,6 +77,7 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "transcription_source",
             "source_reliability",
             "inclusion_confidence",
+            "reference_url",
             "notes",
         ],
     )?;
@@ -99,6 +102,8 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "limits",
             "reliability",
             "access",
+            "url",
+            "accessed",
             "notes",
         ],
     )?;
@@ -120,6 +125,9 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "hypothesis_id",
             "claim",
             "evidence",
+            "evidence_refs",
+            "corpus_refs",
+            "observation_refs",
             "test",
             "status",
             "confidence",
@@ -180,6 +188,56 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
         &root.join("data/observations.csv"),
         strict,
         &["observation_id", "observation"],
+        &["confidence"],
+    )?;
+
+    check_csv_headers(
+        &mut report,
+        &root.join("data/sequences.csv"),
+        &[
+            "sequence_id",
+            "sequence",
+            "corpus_refs",
+            "source_refs",
+            "observation_refs",
+            "position_pattern",
+            "possible_function",
+            "confidence",
+            "status",
+            "notes",
+        ],
+    )?;
+
+    check_csv_records(
+        &mut report,
+        &root.join("data/sequences.csv"),
+        strict,
+        &["sequence_id", "sequence"],
+        &["confidence"],
+    )?;
+
+    check_csv_headers(
+        &mut report,
+        &root.join("data/readings.csv"),
+        &[
+            "reading_id",
+            "sign_or_sequence",
+            "proposed_meaning",
+            "evidence_refs",
+            "corpus_refs",
+            "observation_refs",
+            "alternative_explanations",
+            "confidence",
+            "status",
+            "notes",
+        ],
+    )?;
+
+    check_csv_records(
+        &mut report,
+        &root.join("data/readings.csv"),
+        strict,
+        &["reading_id", "sign_or_sequence"],
         &["confidence"],
     )?;
 
@@ -411,16 +469,16 @@ mod tests {
         std::fs::write(
             root.join("data/corpus-index.csv"),
             format!(
-                "object_name,catalog_id,current_location,sides,transcription_source,source_reliability,inclusion_confidence,notes\n{object_name},D,Rome,Da; Db,SRC-003,High,High,fixture\n"
+            "object_name,catalog_id,current_location,sides,transcription_source,source_reliability,inclusion_confidence,reference_url,notes\n{object_name},D,Rome,Da; Db,SRC-003,High,High,https://example.invalid,fixture\n"
             ),
         )?;
         std::fs::write(
             root.join("data/source-registry.csv"),
-            "source_id,citation,year,source_type,contribution,limits,reliability,access,notes\nSRC-003,Fixture,2022,peer-reviewed-open-access,Fixture,Fixture,High,open-access,fixture\n",
+        "source_id,citation,year,source_type,contribution,limits,reliability,access,url,accessed,notes\nSRC-003,Fixture,2022,peer-reviewed-open-access,Fixture,Fixture,High,open-access,https://example.invalid,2026-05-19,fixture\n",
         )?;
         std::fs::write(
             root.join("data/hypotheses.csv"),
-            "hypothesis_id,claim,evidence,test,status,confidence,notes\nH-001,Fixture,SRC-003,Fixture,active,High,fixture\n",
+        "hypothesis_id,claim,evidence,evidence_refs,corpus_refs,observation_refs,test,status,confidence,notes\nH-001,Fixture,SRC-003,SRC-003,D,O-001,Fixture,active,High,fixture\n",
         )?;
         std::fs::write(
             root.join("data/claims.csv"),
@@ -429,6 +487,14 @@ mod tests {
         std::fs::write(
             root.join("data/observations.csv"),
             "observation_id,corpus_id,source_refs,observation,reading_order_assumption,confidence,status,notes\nO-001,D,SRC-003,Fixture,Fixture,High,active,fixture\n",
+        )?;
+        std::fs::write(
+            root.join("data/sequences.csv"),
+            "sequence_id,sequence,corpus_refs,source_refs,observation_refs,position_pattern,possible_function,confidence,status,notes\nS-001,fixture,D,SRC-003,O-001,fixture,fixture,High,active,fixture\n",
+        )?;
+        std::fs::write(
+            root.join("data/readings.csv"),
+            "reading_id,sign_or_sequence,proposed_meaning,evidence_refs,corpus_refs,observation_refs,alternative_explanations,confidence,status,notes\nR-001,fixture,fixture,SRC-003,D,O-001,fixture,High,active,fixture\n",
         )?;
         Ok(())
     }

@@ -47,17 +47,42 @@ fn e2e_lists_seed_corpus_source_and_hypothesis() {
         .assert()
         .success()
         .stdout(predicate::str::contains("O-001"));
+
+    let mut sequences = Command::cargo_bin("rongorongo").unwrap();
+    sequences
+        .args(["sequences", "list"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("S-001"));
+
+    let mut readings = Command::cargo_bin("rongorongo").unwrap();
+    readings
+        .args(["readings", "list"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("R-001"));
 }
 
 #[test]
 fn e2e_json_output_is_available_for_ci_consumers() {
-    let mut command = Command::cargo_bin("rongorongo").unwrap();
-    command
-        .args(["corpus", "list", "--format", "json"])
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("\"object_name\""))
-        .stdout(predicate::str::contains("\"Echancree tablet\""));
+    for (command_name, key) in [
+        ("corpus", "object_name"),
+        ("sources", "source_id"),
+        ("hypotheses", "hypothesis_id"),
+        ("claims", "claim_id"),
+        ("observations", "observation_id"),
+        ("sequences", "sequence_id"),
+        ("readings", "reading_id"),
+    ] {
+        let mut command = Command::cargo_bin("rongorongo").unwrap();
+        let assert = command
+            .args([command_name, "list", "--format", "json"])
+            .assert()
+            .success();
+        let output = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
+        assert!(parsed.as_array().unwrap()[0].get(key).is_some());
+    }
 }
 
 #[test]
