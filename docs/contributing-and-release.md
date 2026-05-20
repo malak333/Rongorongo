@@ -42,6 +42,9 @@ A release should include:
 
 Before tagging or publishing, also complete `release-readiness.md`.
 
+This repository intentionally does not use GitHub Actions. Run `./scripts/ci.sh`
+locally before merging or tagging.
+
 ## Versioning
 
 Use conservative release language. A release may be production-ready as a

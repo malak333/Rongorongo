@@ -43,7 +43,7 @@ cargo run -- promote claim C-003
 cargo run -- promote hypothesis H-002
 ```
 
-CI runs `./scripts/ci.sh`, which checks formatting, clippy, tests, build, strict validation, and the core list commands.
+Use `./scripts/ci.sh` as the local release gate. This repository intentionally does not use GitHub Actions.
 
 ## Reliability Standard
 

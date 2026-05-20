@@ -60,3 +60,8 @@ find . -maxdepth 3 -type f \( -name '*.pdf' -o -name '*.jpg' -o -name '*.jpeg' -
 
 Any intentional match should be reviewed before release and documented with a
 clear reason.
+
+## Automation Policy
+
+This repository intentionally does not use GitHub Actions. Run `./scripts/ci.sh`
+locally before merging or tagging.
