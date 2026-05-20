@@ -28,6 +28,17 @@ The project has two phases:
 - `docs/source-intake.md`: Intake workflow for adding public-safe sources.
 - `docs/testing-strategy.md`: Evidence and software testing expectations.
 
+## Rust Tooling
+
+```sh
+cargo run -- validate --strict
+cargo run -- corpus list
+cargo run -- sources list
+cargo run -- hypotheses list
+```
+
+CI runs `./scripts/ci.sh`, which checks formatting, clippy, tests, build, strict validation, and the core list commands.
+
 ## Reliability Standard
 
 The project aims to be audit-ready rather than publication-grade from day one. Notes should remain readable and lightweight, but every important claim should be checkable.
