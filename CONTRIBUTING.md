@@ -40,6 +40,8 @@ If a new data file is added, include:
 
 Before opening a pull request, confirm that:
 
+- `./scripts/ci.sh` passes
+- `cargo run -- audit --strict` passes for evidence changes
 - claims are cited or marked as observations
 - confidence labels match the evidence strength
 - speculative material stays out of the dossier conclusions

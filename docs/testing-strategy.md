@@ -21,5 +21,7 @@ The Rust CLI should enforce the project rules:
 - `cargo test`
 - CLI E2E tests for validation and list commands
 - Strict validation for CI and release gates
+- Full audit for cross-reference integrity
+- Promotion-gate checks for claims and hypotheses
 
 The only production-ready v1 claim is that tooling can validate research artifacts and catch unsupported promotion paths. It is not a production-ready decipherment.
