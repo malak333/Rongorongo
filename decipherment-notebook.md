@@ -23,31 +23,32 @@ Work from structure before meaning:
 
 | Observation ID | Object / Side | Observation | Reading Order Assumed | Confidence | Notes |
 |---|---|---|---|---|---|
-| O-001 | TBD | TBD | TBD | TBD | TBD |
+| O-001 | Text D / Da-Db | Side ordering has multiple theoretical possibilities in the modern Text D discussion. | Reverse boustrophedon at line level; side order unresolved | Medium | Use this as a warning against unqualified sequence claims. |
 
 ## 4. Repeated Sequences
 
 | Sequence ID | Sequence | Occurrences | Position Pattern | Possible Function | Confidence | Notes |
 |---|---|---:|---|---|---|---|
-| S-001 | TBD | TBD | TBD | TBD | TBD | TBD |
+| S-001 | 522-99 pattern | 1+ | End/parallel pattern requiring source-specific verification | Unknown | Low | Based on SRC-003 discussion of Text D and comparison to Text R; not semantic evidence. |
 
 ## 5. Sign Frequency
 
 | Sign | Count | Corpus Scope | Position Notes | Interpretation Risk |
 |---|---:|---|---|---|
-| TBD | TBD | TBD | TBD | TBD |
+| 522 | not-yet-counted | Text D seed only | Discussed in relation to Da1.18-19 | Do not infer meaning from isolated comparison |
 
 ## 6. Structural Hypotheses
 
 | Hypothesis ID | Hypothesis | Test | Result | Confidence | Status |
 |---|---|---|---|---|---|
-| H-001 | TBD | TBD | TBD | Low | Draft |
+| H-001 | Accurate palaeographic transcription must precede semantic decipherment attempts. | Validate every semantic reading against a named transcription source before promotion. | Adopted as governance rule. | High | Accepted |
+| H-002 | Reverse boustrophedon should be the default directionality assumption unless text-specific evidence says otherwise. | Require sequence observations to record reading-order assumption. | Active validation requirement. | Medium | Active |
 
 ## 7. Prior Proposal Tests
 
 | Proposal | Testable Claim | Corpus Test | Result | Status | Notes |
 |---|---|---|---|---|---|
-| TBD | TBD | TBD | TBD | TBD | TBD |
+| Fischer-style semantic readings | Claimed readings should predict repeatable structural behavior. | Not yet tested beyond source intake. | Incomplete | Draft | Keep separate from accepted conclusions. |
 
 ## 8. Tentative Semantic Readings
 
@@ -55,7 +56,7 @@ Semantic readings are allowed only where structural evidence is already strong.
 
 | Reading ID | Sign / Sequence | Proposed Meaning | Evidence | Alternative Explanations | Confidence |
 |---|---|---|---|---|---|
-| R-001 | TBD | TBD | TBD | TBD | Low |
+| R-001 | none | none proposed | Structural evidence is not yet sufficient. | N/A | Low |
 
 ## 9. Rejected Hypotheses
 
@@ -63,7 +64,7 @@ Rejected ideas remain useful. Record why each failed so the same weak pattern is
 
 | Hypothesis ID | Rejected Claim | Reason Rejected | Evidence | Date |
 |---|---|---|---|---|
-| TBD | TBD | TBD | TBD | TBD |
+| none | none | No rejected hypotheses have been recorded yet. | N/A | 2026-05-19 |
 
 ## 10. Decision Log
 

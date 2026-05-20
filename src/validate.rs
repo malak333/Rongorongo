@@ -346,7 +346,24 @@ mod tests {
 
     #[test]
     fn strict_mode_rejects_placeholders() {
-        let report = validate_workspace(Path::new(env!("CARGO_MANIFEST_DIR")), true).unwrap();
+        let temp = tempfile::tempdir().unwrap();
+        write_minimal_workspace(temp.path(), "TBD").unwrap();
+
+        let report = validate_workspace(temp.path(), true).unwrap();
         assert!(report.error_count > 0);
+    }
+
+    fn write_minimal_workspace(root: &Path, object_name: &str) -> std::io::Result<()> {
+        std::fs::create_dir_all(root.join("data"))?;
+        std::fs::write(root.join("README.md"), "README\n")?;
+        std::fs::write(root.join("research-dossier.md"), "Dossier\n")?;
+        std::fs::write(root.join("decipherment-notebook.md"), "Notebook\n")?;
+        std::fs::write(
+            root.join("data/corpus-index.csv"),
+            format!(
+                "object_name,catalog_id,current_location,sides,transcription_source,source_reliability,inclusion_confidence,notes\n{object_name},D,Rome,Da; Db,SRC-003,High,High,fixture\n"
+            ),
+        )?;
+        Ok(())
     }
 }
