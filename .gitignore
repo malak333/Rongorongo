@@ -1,0 +1,50 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor and local workspace state
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.mobileprovision
+secrets/
+
+# Generated output and local scratch space
+.cache/
+.tmp/
+tmp/
+out/
+dist/
+build/
+coverage/
+target/
+
+# Dependency directories, if tooling is added later
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Keep source-managed research data explicit.
+# Do not commit copyrighted scans, extracted book chapters, or bulk source dumps.
+data/raw/
+data/source-materials/
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.tif
+*.tiff
+*.webp
