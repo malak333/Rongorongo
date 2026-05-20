@@ -23,6 +23,10 @@ The project has two phases:
 - `research-dossier.md`: Evidence layer for sources, corpus facts, prior proposals, and confidence-labeled conclusions.
 - `decipherment-notebook.md`: Hypothesis layer for structural tests, rejected ideas, and tentative readings.
 - `data/corpus-index.csv`: Manual index of canonical Rongorongo objects and transcription sources.
+- `data/source-registry.csv`: Source provenance and reliability table.
+- `data/hypotheses.csv`: Machine-readable register of working hypotheses and tests.
+- `docs/source-intake.md`: Intake workflow for adding public-safe sources.
+- `docs/testing-strategy.md`: Evidence and software testing expectations.
 
 ## Reliability Standard
 
@@ -40,3 +44,7 @@ The project aims to be audit-ready rather than publication-grade from day one. N
 - Do not mix disputed or weakly attested inscriptions into the first corpus pass.
 - Do not redistribute copyrighted scans, images, or long excerpts.
 - Do not build a database or image annotation pipeline until manual analysis shows a real need.
+
+## Production-Ready Scope
+
+For v1, production-ready means the repository has enforceable research-governance tooling, traceable data files, documented source intake, and automated validation. It does not mean Rongorongo has been deciphered.
