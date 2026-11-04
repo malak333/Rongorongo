@@ -25,6 +25,10 @@ The Rust CLI should enforce the project rules:
 - Strict validation for the local release gate
 - Full audit for cross-reference integrity
 - Promotion-gate checks for claims and hypotheses
+- Rule tests in `tests/cli.rs` run against a temporary fixture workspace
+  (`tests/common/mod.rs`), not the live research data, so adding rows never
+  breaks them. Each test breaks the fixture in one way and asserts the message.
+- `tests/e2e_cli.rs` is a smoke test that the live workspace passes the gate.
 - List/intake/promotion commands exercised through `./scripts/ci.sh`
 
 The only production-ready v1 claim is that tooling can validate research artifacts and catch unsupported promotion paths. It is not a production-ready decipherment.

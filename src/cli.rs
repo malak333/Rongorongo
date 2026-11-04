@@ -19,9 +19,10 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Run the full research-governance audit, including cross-reference checks.
+    /// Run the full research-governance audit: cross-references, confidence caps,
+    /// promotion gates on promoted rows, and CSV/Markdown consistency.
     Audit(AuditArgs),
-    /// Validate required files and supported CSV schemas.
+    /// Validate required files, CSV schemas, and controlled vocabularies.
     Validate(ValidateArgs),
     /// Work with the canonical corpus index.
     Corpus(CorpusCommand),
@@ -322,40 +323,49 @@ fn print_validation(report: ValidationReport) -> Result<()> {
 }
 
 fn print_audit(report: AuditReport, format: OutputFormat) -> Result<()> {
-    match format {
-        OutputFormat::Json => {
-            println!("{}", serde_json::to_string_pretty(&report.summary)?);
-            if report.validation.error_count == 0 {
-                return Ok(());
-            }
-            anyhow::bail!("workspace audit failed")
+    match (&report.summary, format) {
+        (Some(summary), OutputFormat::Json) => {
+            println!("{}", serde_json::to_string_pretty(summary)?);
         }
-        OutputFormat::Table => {
+        (Some(summary), OutputFormat::Table) => {
             println!("Audit summary");
-            println!("corpus_objects\t{}", report.summary.corpus_objects);
-            println!("sources\t{}", report.summary.sources);
-            println!("claims\t{}", report.summary.claims);
-            println!("observations\t{}", report.summary.observations);
-            println!("sequences\t{}", report.summary.sequences);
-            println!("readings\t{}", report.summary.readings);
-            println!("hypotheses\t{}", report.summary.hypotheses);
-            println!("promoted_claims\t{}", report.summary.promoted_claims);
-            println!("active_hypotheses\t{}", report.summary.active_hypotheses);
+            println!("corpus_objects\t{}", summary.corpus_objects);
+            println!("sources\t{}", summary.sources);
+            println!("claims\t{}", summary.claims);
+            println!("observations\t{}", summary.observations);
+            println!("sequences\t{}", summary.sequences);
+            println!("readings\t{}", summary.readings);
+            println!("hypotheses\t{}", summary.hypotheses);
+            println!("promoted_claims\t{}", summary.promoted_claims);
+            println!("active_hypotheses\t{}", summary.active_hypotheses);
         }
+        (None, _) => {}
     }
 
+    // In JSON mode, findings go to stderr so stdout stays parseable.
+    let json = matches!(format, OutputFormat::Json);
     for message in &report.validation.messages {
         if !matches!(message.level, crate::validate::ValidationLevel::Ok) {
-            println!("[{}] {}", message.level, message.message);
+            let line = format!("[{}] {}", message.level, message.message);
+            if json {
+                eprintln!("{line}");
+            } else {
+                println!("{line}");
+            }
         }
     }
 
-    println!(
+    let totals = format!(
         "validated {} files with {} warning(s) and {} error(s)",
         report.validation.checked_files,
         report.validation.warning_count,
         report.validation.error_count
     );
+    if json {
+        eprintln!("{totals}");
+    } else {
+        println!("{totals}");
+    }
 
     if report.validation.error_count == 0 {
         Ok(())

@@ -20,7 +20,7 @@ CLI support:
 
 ```sh
 cargo run -- intake source --next-id SRC-006
-cargo run -- promote claim C-003
+cargo run -- promote claim C-002
 cargo run -- promote hypothesis H-002
 ```
 

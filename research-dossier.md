@@ -13,8 +13,8 @@ Phase one covers the canonical, best-attested Rongorongo objects with establishe
 | SRC-001: Thomas S. Barthel, Grundlagen zur Entzifferung der Osterinselschrift | 1958 | scholarly-corpus | Foundational sign catalogue and corpus nomenclature | Historic drawings/transcriptions require checking against later palaeography | High |
 | SRC-002: Steven Roger Fischer, Rongorongo: The Easter Island Script | 1997 | scholarly-monograph | Catalogue and interpretation history | Decipherment proposals require independent tests | Medium |
 | SRC-003: Lastilla et al., Modelling the Rongorongo tablets | 2022 | peer-reviewed-open-access | Modern 3D and palaeographic analysis of Text D | Focused on Text D | High |
-| SRC-004: Kohaumotu / rongorongo.org digitized corpus pages | 2026 | digital-corpus-reference | Public corpus navigation and transliteration notes | Needs scholarly confirmation before high-confidence use | Medium |
-| SRC-005: Omniglot Rongorongo overview | 2026 | expert-secondary-web | Orientation and public-facing summary | Not suitable for detailed corpus claims | Low |
+| SRC-004: Kohaumotu / rongorongo.org digitized corpus pages | n.d. | digital-corpus-reference | Public corpus navigation and transliteration notes | Needs scholarly confirmation before high-confidence use | Medium |
+| SRC-005: Omniglot Rongorongo overview | n.d. | expert-secondary-web | Orientation and public-facing summary | Not suitable for detailed corpus claims | Low |
 
 ## 3. Corpus Scope
 
@@ -45,7 +45,7 @@ Default frame: Rapa Nui / Eastern Polynesian. Broader Polynesian comparison may 
 
 | Claim | Source | Context Type | Confidence | Notes |
 |---|---|---|---|---|
-| Rapa Nui / Eastern Polynesian is the default comparison frame. | Project decision | linguistic-frame | Medium | Comparative similarity is a constraint, not proof of decipherment. |
+| Rapa Nui / Eastern Polynesian is the default comparison frame. | Project decision (no source cited) | linguistic-frame | Medium | Comparative similarity is a constraint, not proof of decipherment. Recorded in the notebook decision log rather than the claims register because no registered source supports it. |
 
 ## 7. Prior Decipherment Proposals
 
@@ -61,7 +61,7 @@ Use this section for small, checkable claims extracted from sources or corpus ob
 
 | Claim ID | Claim | Evidence | Source Type | Agreement / Conflict | Confidence | Notes |
 |---|---|---|---|---|---|---|
-| C-001 | Rongorongo remains undeciphered. | SRC-003; SRC-005 | peer-reviewed plus secondary overview | Agreement | High | This project must not claim fluent readings. |
+| C-001 | Rongorongo remains undeciphered. | SRC-003; SRC-005 | peer-reviewed plus secondary overview | Agreement | Medium | This project must not claim fluent readings. Medium until additional high-reliability state-of-field sources are registered. |
 | C-002 | Accurate transcription is a prerequisite for decipherment attempts. | SRC-003 | peer-reviewed-open-access | Agreement within project method | High | This governs the Rust validation scope. |
 
 ## 9. Current Conclusions

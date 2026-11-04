@@ -42,6 +42,36 @@ Before a claim is promoted:
 - Conflicts and limits are recorded.
 - Public-safe handling has been checked.
 
+## Rules Enforced By `audit --strict`
+
+These rules are checked automatically. A row can be typed in as `promoted`
+by hand, so the audit re-applies the gates to every row already promoted.
+
+- **Vocabularies.** Row confidence must be `High`, `Medium`, or `Low`. Source
+  reliability may also be `Mixed`, which counts as Medium for the cap below.
+  Statuses are `draft`, `active`, `promoted`, `rejected`, `superseded`
+  (hypotheses use `accepted-working-rule` in place of `promoted`).
+- **Confidence cap.** A row's confidence may not exceed the reliability of the
+  strongest source it cites. A Low source alone cannot carry a High claim.
+- **Corpus reliability.** A corpus row's `source_reliability` must match the
+  reliability of its `transcription_source` in the source registry.
+- **Promoted rows.** Claims marked `promoted` and hypotheses marked
+  `accepted-working-rule` must pass the same gate as `promote claim` /
+  `promote hypothesis`. Promoted observations, sequences, and readings need
+  Medium or High confidence.
+- **Semantic readings.** A reading whose `proposed_meaning` is anything other
+  than `none-proposed` must cite only promoted observations, and may not be
+  more confident than the weakest observation it cites.
+- **Reading order.** Every observation must state its reading-order assumption.
+- **Markdown sync.** The CSVs are the source of truth. Every register id must
+  appear in a table in `research-dossier.md` or `decipherment-notebook.md`;
+  every id a table mentions must exist in the CSVs; and the Confidence,
+  Reliability, and Sequence columns must match the CSV. Prose columns are not
+  compared, so keep them faithful by review.
+- **Project decisions are not claims.** A choice the project makes without a
+  supporting source belongs in the notebook decision log, not in
+  `data/claims.csv` with a borrowed citation.
+
 ## Failure Rules
 
 Do not promote:

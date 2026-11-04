@@ -24,7 +24,7 @@ Use the intake template as a starting row, then edit it manually with the real c
 - `High`: peer-reviewed work, museum records, primary corpus catalogues, or directly inspectable corpus evidence.
 - `Medium`: reputable expert secondary source or digital corpus reference that still needs scholarly confirmation.
 - `Low`: orientation material, unspecialized summaries, or speculative proposals.
-- `Mixed`: useful source with separable strong and weak parts.
+- `Mixed`: useful source with separable strong and weak parts. Counts as Medium when the audit caps the confidence of rows that cite it. `Mixed` is a source label only; rows use `High`, `Medium`, or `Low`.
 
 ## Public-Safe Rule
 

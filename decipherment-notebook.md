@@ -24,12 +24,17 @@ Work from structure before meaning:
 | Observation ID | Object / Side | Observation | Reading Order Assumed | Confidence | Notes |
 |---|---|---|---|---|---|
 | O-001 | Text D / Da-Db | Side ordering has multiple theoretical possibilities in the modern Text D discussion. | Reverse boustrophedon at line level; side order unresolved | Medium | Use this as a warning against unqualified sequence claims. |
+| O-002 | Text D | Text D is the first seeded canonical object because open-access modern palaeographic analysis is available. | Text-specific | High | Corpus governance observation, not a semantic reading. |
 
 ## 4. Repeated Sequences
 
 | Sequence ID | Sequence | Occurrences | Position Pattern | Possible Function | Confidence | Notes |
 |---|---|---:|---|---|---|---|
-| S-001 | 522-99 pattern | 1+ | End/parallel pattern requiring source-specific verification | Unknown | Low | Based on SRC-003 discussion of Text D and comparison to Text R; not semantic evidence. |
+| S-001 | none-recorded | 0 | not-yet-analyzed | none-proposed | Low | No repeated sequence has been registered yet. |
+
+Unregistered leads (not yet verified against the source; do not cite):
+
+- A 522-99 pattern discussed in SRC-003 in relation to Text D and a comparison with Text R. Verify the passage, add Text R to the corpus index, then register it as a sequence.
 
 ## 5. Sign Frequency
 
@@ -73,4 +78,5 @@ Rejected ideas remain useful. Record why each failed so the same weak pattern is
 | Use two-track dossier and notebook | Dossier-only, notebook-only | Keeps evidence and speculation separate while allowing controlled exploration |
 | Start with canonical corpus only | Include related artifacts, include everything | Reduces noise while the method is being established |
 | Treat prior decipherments as hypotheses | Survey only, ignore initially | Allows useful claims to be tested without granting authority |
+| Use Rapa Nui / Eastern Polynesian as the default comparison frame | Broad Polynesian first, no default frame | Geographic and historical proximity; kept as a project decision because no registered source is cited for it |
 | Use layered confidence | Very conservative only, fully exploratory | Preserves ideas while preventing low-confidence claims from becoming conclusions |

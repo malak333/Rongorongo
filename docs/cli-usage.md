@@ -10,7 +10,7 @@ cargo run -- validate --strict
 cargo run -- audit --strict
 ```
 
-Use `validate` during drafting and `validate --strict` for schema gates. Use `audit --strict` for the full production gate because it also checks source/corpus/claim/hypothesis cross-references.
+Use `validate` during drafting and `validate --strict` for schema and vocabulary gates. Use `audit --strict` for the full gate: it also checks cross-references, confidence caps, promotion gates on rows already marked promoted, semantic-reading rules, and CSV/Markdown consistency. See `docs/evidence-rules.md` for the full rule list. With `--format json`, the summary goes to stdout and findings go to stderr.
 
 ## Listing Commands
 
@@ -24,7 +24,7 @@ cargo run -- observations list
 cargo run -- sequences list
 cargo run -- readings list
 cargo run -- intake source --next-id SRC-006
-cargo run -- promote claim C-003
+cargo run -- promote claim C-002
 cargo run -- promote hypothesis H-002
 ```
 
@@ -34,7 +34,7 @@ The table output is for humans. JSON output is available where local scripts or 
 
 `intake source` prints a public-safe CSV row template for `data/source-registry.csv`.
 
-`promote claim` and `promote hypothesis` do not modify files. They check whether the selected item has the evidence, source references, tests, and confidence level needed before a maintainer manually promotes it into the dossier.
+`promote claim` and `promote hypothesis` do not modify files. They check whether the selected item has the evidence, source references, tests, and confidence level needed before a maintainer manually sets its status and adds it to the dossier. `audit --strict` re-runs the same gate on every promoted row, so editing the status by hand cannot skip it.
 
 ## Safety Contract
 

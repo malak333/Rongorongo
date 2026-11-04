@@ -1,14 +1,16 @@
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::{Context, Result};
-use thiserror::Error;
 
 #[derive(Debug, Clone)]
 pub struct ValidationReport {
     pub checked_files: usize,
     pub warning_count: usize,
     pub error_count: usize,
+    /// False when any required file is missing or any CSV has missing headers.
+    /// Cross-reference auditing is skipped when the schema is not valid.
+    pub schema_valid: bool,
     pub messages: Vec<ValidationMessage>,
 }
 
@@ -36,40 +38,54 @@ impl fmt::Display for ValidationLevel {
     }
 }
 
-#[derive(Debug, Error)]
-#[error("CSV {path} is missing required header(s): {missing:?}")]
-struct MissingHeaders {
-    path: PathBuf,
-    missing: Vec<String>,
-}
-
-pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport> {
-    let mut report = ValidationReport {
-        checked_files: 0,
-        warning_count: 0,
-        error_count: 0,
-        messages: Vec::new(),
-    };
-
-    for required in [
-        "README.md",
-        "research-dossier.md",
-        "decipherment-notebook.md",
-        "data/corpus-index.csv",
-        "data/source-registry.csv",
-        "data/hypotheses.csv",
-        "data/claims.csv",
-        "data/observations.csv",
-        "data/sequences.csv",
-        "data/readings.csv",
-    ] {
-        check_required_file(&mut report, &root.join(required), required, strict)?;
+impl ValidationReport {
+    pub fn error(&mut self, message: String) {
+        self.push(ValidationLevel::Error, message);
     }
 
-    check_csv_headers(
-        &mut report,
-        &root.join("data/corpus-index.csv"),
-        &[
+    pub fn push(&mut self, level: ValidationLevel, message: String) {
+        match level {
+            ValidationLevel::Ok => {}
+            ValidationLevel::Warning => self.warning_count += 1,
+            ValidationLevel::Error => self.error_count += 1,
+        }
+        self.messages.push(ValidationMessage { level, message });
+    }
+}
+
+/// Confidence labels allowed on claims, observations, sequences, hypotheses,
+/// readings, and corpus inclusion.
+pub const CONFIDENCE_LABELS: &[&str] = &["High", "Medium", "Low"];
+
+/// Reliability labels allowed on sources. `Mixed` marks a source with
+/// separable strong and weak parts (see docs/source-intake.md).
+pub const RELIABILITY_LABELS: &[&str] = &["High", "Medium", "Low", "Mixed"];
+
+pub const CLAIM_STATUSES: &[&str] = &["draft", "active", "promoted", "rejected", "superseded"];
+pub const HYPOTHESIS_STATUSES: &[&str] = &[
+    "draft",
+    "active",
+    "accepted-working-rule",
+    "rejected",
+    "superseded",
+];
+pub const RECORD_STATUSES: &[&str] = &["draft", "active", "promoted", "rejected", "superseded"];
+
+struct CsvSpec {
+    path: &'static str,
+    headers: &'static [&'static str],
+    /// Columns that must be non-empty. Columns ending in `_id` (and
+    /// `catalog_id`) must also be unique.
+    required_columns: &'static [&'static str],
+    confidence_columns: &'static [&'static str],
+    reliability_columns: &'static [&'static str],
+    statuses: Option<&'static [&'static str]>,
+}
+
+const CSV_SPECS: &[CsvSpec] = &[
+    CsvSpec {
+        path: "data/corpus-index.csv",
+        headers: &[
             "object_name",
             "catalog_id",
             "current_location",
@@ -80,20 +96,14 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "reference_url",
             "notes",
         ],
-    )?;
-
-    check_csv_records(
-        &mut report,
-        &root.join("data/corpus-index.csv"),
-        strict,
-        &["object_name", "catalog_id"],
-        &["source_reliability", "inclusion_confidence"],
-    )?;
-
-    check_optional_csv_headers(
-        &mut report,
-        &root.join("data/source-registry.csv"),
-        &[
+        required_columns: &["object_name", "catalog_id", "transcription_source"],
+        confidence_columns: &["inclusion_confidence"],
+        reliability_columns: &["source_reliability"],
+        statuses: None,
+    },
+    CsvSpec {
+        path: "data/source-registry.csv",
+        headers: &[
             "source_id",
             "citation",
             "year",
@@ -106,22 +116,14 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "accessed",
             "notes",
         ],
-    )?;
-
-    if root.join("data/source-registry.csv").exists() {
-        check_csv_records(
-            &mut report,
-            &root.join("data/source-registry.csv"),
-            strict,
-            &["source_id", "citation"],
-            &["reliability"],
-        )?;
-    }
-
-    check_optional_csv_headers(
-        &mut report,
-        &root.join("data/hypotheses.csv"),
-        &[
+        required_columns: &["source_id", "citation", "contribution", "limits", "access"],
+        confidence_columns: &[],
+        reliability_columns: &["reliability"],
+        statuses: None,
+    },
+    CsvSpec {
+        path: "data/hypotheses.csv",
+        headers: &[
             "hypothesis_id",
             "claim",
             "evidence",
@@ -133,22 +135,14 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "confidence",
             "notes",
         ],
-    )?;
-
-    if root.join("data/hypotheses.csv").exists() {
-        check_csv_records(
-            &mut report,
-            &root.join("data/hypotheses.csv"),
-            strict,
-            &["hypothesis_id", "claim"],
-            &["confidence"],
-        )?;
-    }
-
-    check_csv_headers(
-        &mut report,
-        &root.join("data/claims.csv"),
-        &[
+        required_columns: &["hypothesis_id", "claim", "test"],
+        confidence_columns: &["confidence"],
+        reliability_columns: &[],
+        statuses: Some(HYPOTHESIS_STATUSES),
+    },
+    CsvSpec {
+        path: "data/claims.csv",
+        headers: &[
             "claim_id",
             "claim",
             "claim_type",
@@ -158,20 +152,14 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "status",
             "notes",
         ],
-    )?;
-
-    check_csv_records(
-        &mut report,
-        &root.join("data/claims.csv"),
-        strict,
-        &["claim_id", "claim"],
-        &["confidence"],
-    )?;
-
-    check_csv_headers(
-        &mut report,
-        &root.join("data/observations.csv"),
-        &[
+        required_columns: &["claim_id", "claim"],
+        confidence_columns: &["confidence"],
+        reliability_columns: &[],
+        statuses: Some(CLAIM_STATUSES),
+    },
+    CsvSpec {
+        path: "data/observations.csv",
+        headers: &[
             "observation_id",
             "corpus_id",
             "source_refs",
@@ -181,20 +169,14 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "status",
             "notes",
         ],
-    )?;
-
-    check_csv_records(
-        &mut report,
-        &root.join("data/observations.csv"),
-        strict,
-        &["observation_id", "observation"],
-        &["confidence"],
-    )?;
-
-    check_csv_headers(
-        &mut report,
-        &root.join("data/sequences.csv"),
-        &[
+        required_columns: &["observation_id", "observation", "reading_order_assumption"],
+        confidence_columns: &["confidence"],
+        reliability_columns: &[],
+        statuses: Some(RECORD_STATUSES),
+    },
+    CsvSpec {
+        path: "data/sequences.csv",
+        headers: &[
             "sequence_id",
             "sequence",
             "corpus_refs",
@@ -206,20 +188,14 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "status",
             "notes",
         ],
-    )?;
-
-    check_csv_records(
-        &mut report,
-        &root.join("data/sequences.csv"),
-        strict,
-        &["sequence_id", "sequence"],
-        &["confidence"],
-    )?;
-
-    check_csv_headers(
-        &mut report,
-        &root.join("data/readings.csv"),
-        &[
+        required_columns: &["sequence_id", "sequence"],
+        confidence_columns: &["confidence"],
+        reliability_columns: &[],
+        statuses: Some(RECORD_STATUSES),
+    },
+    CsvSpec {
+        path: "data/readings.csv",
+        headers: &[
             "reading_id",
             "sign_or_sequence",
             "proposed_meaning",
@@ -231,271 +207,189 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
             "status",
             "notes",
         ],
-    )?;
+        required_columns: &["reading_id", "sign_or_sequence"],
+        confidence_columns: &["confidence"],
+        reliability_columns: &[],
+        statuses: Some(RECORD_STATUSES),
+    },
+];
 
-    check_csv_records(
-        &mut report,
-        &root.join("data/readings.csv"),
-        strict,
-        &["reading_id", "sign_or_sequence"],
-        &["confidence"],
-    )?;
+const MARKDOWN_FILES: &[&str] = &[
+    "README.md",
+    "research-dossier.md",
+    "decipherment-notebook.md",
+];
+
+pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport> {
+    let mut report = ValidationReport {
+        checked_files: 0,
+        warning_count: 0,
+        error_count: 0,
+        schema_valid: true,
+        messages: Vec::new(),
+    };
+
+    for label in MARKDOWN_FILES {
+        check_markdown_file(&mut report, root, label, strict)?;
+    }
+
+    for spec in CSV_SPECS {
+        check_csv(&mut report, root, spec, strict)?;
+    }
 
     Ok(report)
 }
 
-fn check_required_file(
+fn placeholder_level(strict: bool) -> ValidationLevel {
+    if strict {
+        ValidationLevel::Error
+    } else {
+        ValidationLevel::Warning
+    }
+}
+
+fn check_markdown_file(
     report: &mut ValidationReport,
-    path: &Path,
+    root: &Path,
     label: &str,
     strict: bool,
 ) -> Result<()> {
     report.checked_files += 1;
-    if path.is_file() {
-        push(report, ValidationLevel::Ok, format!("found {label}"));
-        let text = std::fs::read_to_string(path)
-            .with_context(|| format!("failed to read {}", path.display()))?;
-        if text.contains("TBD") {
-            let level = if strict {
-                ValidationLevel::Error
-            } else {
-                ValidationLevel::Warning
-            };
-            push(
-                report,
-                level,
-                format!("{label} still contains TBD placeholders"),
-            );
-        }
-    } else {
-        push(
-            report,
-            ValidationLevel::Error,
-            format!("missing required file {label}"),
+    let path = root.join(label);
+    if !path.is_file() {
+        report.schema_valid = false;
+        report.error(format!("missing required file {label}"));
+        return Ok(());
+    }
+    report.push(ValidationLevel::Ok, format!("found {label}"));
+    let text = std::fs::read_to_string(&path)
+        .with_context(|| format!("failed to read {}", path.display()))?;
+    if text.contains("TBD") {
+        report.push(
+            placeholder_level(strict),
+            format!("{label} still contains TBD placeholders"),
         );
     }
     Ok(())
 }
 
-fn check_csv_records(
+fn check_csv(
     report: &mut ValidationReport,
-    path: &Path,
+    root: &Path,
+    spec: &CsvSpec,
     strict: bool,
-    identity_columns: &[&str],
-    enum_columns: &[&str],
 ) -> Result<()> {
-    let mut reader = csv::Reader::from_path(path)
+    report.checked_files += 1;
+    let label = spec.path;
+    let path = root.join(label);
+    if !path.is_file() {
+        report.schema_valid = false;
+        report.error(format!("missing required file {label}"));
+        return Ok(());
+    }
+
+    let mut reader = csv::Reader::from_path(&path)
         .with_context(|| format!("failed to open CSV at {}", path.display()))?;
     let headers = reader
         .headers()
         .with_context(|| format!("failed to read CSV headers from {}", path.display()))?
         .clone();
-    let mut seen_ids = std::collections::HashSet::new();
 
+    let missing: Vec<&str> = spec
+        .headers
+        .iter()
+        .copied()
+        .filter(|expected| !headers.iter().any(|actual| actual == *expected))
+        .collect();
+    if !missing.is_empty() {
+        report.schema_valid = false;
+        report.error(format!(
+            "{label} is missing required header(s): {}",
+            missing.join(", ")
+        ));
+        return Ok(());
+    }
+    report.push(ValidationLevel::Ok, format!("valid CSV headers in {label}"));
+
+    let mut seen_ids = std::collections::HashSet::new();
     for (index, record) in reader.records().enumerate() {
-        let row_number = index + 2;
-        let record = record.with_context(|| {
-            format!(
-                "failed to read CSV row {row_number} from {}",
-                path.display()
-            )
-        })?;
+        let row = index + 2;
+        let record = match record {
+            Ok(record) => record,
+            Err(error) => {
+                report.schema_valid = false;
+                report.error(format!("{label} row {row} could not be parsed: {error}"));
+                continue;
+            }
+        };
+        let value = |column: &str| -> &str {
+            headers
+                .iter()
+                .position(|header| header == column)
+                .and_then(|index| record.get(index))
+                .map(str::trim)
+                .unwrap_or("")
+        };
 
         if record
             .iter()
             .any(|field| field.trim().eq_ignore_ascii_case("TBD"))
         {
-            let level = if strict {
-                ValidationLevel::Error
-            } else {
-                ValidationLevel::Warning
-            };
-            push(
-                report,
-                level,
-                format!(
-                    "{} row {row_number} contains TBD placeholder",
-                    path.display()
-                ),
+            report.push(
+                placeholder_level(strict),
+                format!("{label} row {row} contains TBD placeholder"),
             );
         }
 
-        for column in identity_columns {
-            if let Some(value) = value_for(&headers, &record, column) {
-                let trimmed = value.trim();
-                if trimmed.is_empty() {
-                    push(
-                        report,
-                        ValidationLevel::Error,
-                        format!("{} row {row_number} has empty {column}", path.display()),
-                    );
-                }
-                if *column == "catalog_id" || column.ends_with("_id") {
-                    let key = format!("{column}:{trimmed}");
-                    if !trimmed.is_empty() && !seen_ids.insert(key) {
-                        push(
-                            report,
-                            ValidationLevel::Error,
-                            format!(
-                                "{} row {row_number} duplicates {column}={trimmed}",
-                                path.display()
-                            ),
-                        );
-                    }
-                }
+        for column in spec.required_columns {
+            let field = value(column);
+            if field.is_empty() {
+                report.error(format!("{label} row {row} has empty {column}"));
+                continue;
+            }
+            if column.ends_with("_id") && !seen_ids.insert(format!("{column}:{field}")) {
+                report.error(format!("{label} row {row} duplicates {column}={field}"));
             }
         }
 
-        for column in enum_columns {
-            if let Some(value) = value_for(&headers, &record, column) {
-                let value = value.trim();
-                if !value.is_empty()
-                    && !value.eq_ignore_ascii_case("TBD")
-                    && !["High", "Medium", "Low", "Mixed"].contains(&value)
-                {
-                    push(
-                        report,
-                        ValidationLevel::Error,
-                        format!(
-                            "{} row {row_number} has invalid {column}={value}; expected High, Medium, Low, or Mixed",
-                            path.display()
-                        ),
-                    );
-                }
-            }
+        for column in spec.confidence_columns {
+            check_enum(report, label, row, column, value(column), CONFIDENCE_LABELS);
+        }
+        for column in spec.reliability_columns {
+            check_enum(
+                report,
+                label,
+                row,
+                column,
+                value(column),
+                RELIABILITY_LABELS,
+            );
+        }
+        if let Some(statuses) = spec.statuses {
+            check_enum(report, label, row, "status", value("status"), statuses);
         }
     }
 
     Ok(())
 }
 
-fn value_for<'a>(
-    headers: &csv::StringRecord,
-    record: &'a csv::StringRecord,
-    column: &str,
-) -> Option<&'a str> {
-    headers
-        .iter()
-        .position(|header| header == column)
-        .and_then(|index| record.get(index))
-}
-
-fn check_optional_csv_headers(
+fn check_enum(
     report: &mut ValidationReport,
-    path: &Path,
-    expected: &[&str],
-) -> Result<()> {
-    if path.exists() {
-        check_csv_headers(report, path, expected)?;
-    } else {
-        push(
-            report,
-            ValidationLevel::Warning,
-            format!("optional CSV is not present: {}", path.display()),
-        );
+    label: &str,
+    row: usize,
+    column: &str,
+    value: &str,
+    allowed: &[&str],
+) {
+    // Placeholders are reported separately by the TBD check.
+    if value.eq_ignore_ascii_case("TBD") {
+        return;
     }
-    Ok(())
-}
-
-fn check_csv_headers(report: &mut ValidationReport, path: &Path, expected: &[&str]) -> Result<()> {
-    report.checked_files += 1;
-    let mut reader = csv::Reader::from_path(path)
-        .with_context(|| format!("failed to open CSV at {}", path.display()))?;
-    let headers = reader
-        .headers()
-        .with_context(|| format!("failed to read CSV headers from {}", path.display()))?
-        .clone();
-    let missing: Vec<String> = expected
-        .iter()
-        .filter(|header| !headers.iter().any(|actual| actual == **header))
-        .map(|header| (*header).to_string())
-        .collect();
-
-    if missing.is_empty() {
-        push(
-            report,
-            ValidationLevel::Ok,
-            format!("valid CSV headers in {}", path.display()),
-        );
-        Ok(())
-    } else {
-        push(
-            report,
-            ValidationLevel::Error,
-            format!("invalid CSV headers in {}", path.display()),
-        );
-        Err(MissingHeaders {
-            path: path.to_path_buf(),
-            missing,
-        }
-        .into())
-    }
-}
-
-fn push(report: &mut ValidationReport, level: ValidationLevel, message: String) {
-    match level {
-        ValidationLevel::Ok => {}
-        ValidationLevel::Warning => report.warning_count += 1,
-        ValidationLevel::Error => report.error_count += 1,
-    }
-    report.messages.push(ValidationMessage { level, message });
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn validates_current_workspace_shape() {
-        let report = validate_workspace(Path::new(env!("CARGO_MANIFEST_DIR")), false).unwrap();
-        assert_eq!(report.error_count, 0);
-        assert!(report.checked_files >= 5);
-    }
-
-    #[test]
-    fn strict_mode_rejects_placeholders() {
-        let temp = tempfile::tempdir().unwrap();
-        write_minimal_workspace(temp.path(), "TBD").unwrap();
-
-        let report = validate_workspace(temp.path(), true).unwrap();
-        assert!(report.error_count > 0);
-    }
-
-    fn write_minimal_workspace(root: &Path, object_name: &str) -> std::io::Result<()> {
-        std::fs::create_dir_all(root.join("data"))?;
-        std::fs::write(root.join("README.md"), "README\n")?;
-        std::fs::write(root.join("research-dossier.md"), "Dossier\n")?;
-        std::fs::write(root.join("decipherment-notebook.md"), "Notebook\n")?;
-        std::fs::write(
-            root.join("data/corpus-index.csv"),
-            format!(
-            "object_name,catalog_id,current_location,sides,transcription_source,source_reliability,inclusion_confidence,reference_url,notes\n{object_name},D,Rome,Da; Db,SRC-003,High,High,https://example.invalid,fixture\n"
-            ),
-        )?;
-        std::fs::write(
-            root.join("data/source-registry.csv"),
-        "source_id,citation,year,source_type,contribution,limits,reliability,access,url,accessed,notes\nSRC-003,Fixture,2022,peer-reviewed-open-access,Fixture,Fixture,High,open-access,https://example.invalid,2026-05-19,fixture\n",
-        )?;
-        std::fs::write(
-            root.join("data/hypotheses.csv"),
-        "hypothesis_id,claim,evidence,evidence_refs,corpus_refs,observation_refs,test,status,confidence,notes\nH-001,Fixture,SRC-003,SRC-003,D,O-001,Fixture,active,High,fixture\n",
-        )?;
-        std::fs::write(
-            root.join("data/claims.csv"),
-            "claim_id,claim,claim_type,evidence_refs,corpus_refs,confidence,status,notes\nC-001,Fixture,method,SRC-003,D,High,active,fixture\n",
-        )?;
-        std::fs::write(
-            root.join("data/observations.csv"),
-            "observation_id,corpus_id,source_refs,observation,reading_order_assumption,confidence,status,notes\nO-001,D,SRC-003,Fixture,Fixture,High,active,fixture\n",
-        )?;
-        std::fs::write(
-            root.join("data/sequences.csv"),
-            "sequence_id,sequence,corpus_refs,source_refs,observation_refs,position_pattern,possible_function,confidence,status,notes\nS-001,fixture,D,SRC-003,O-001,fixture,fixture,High,active,fixture\n",
-        )?;
-        std::fs::write(
-            root.join("data/readings.csv"),
-            "reading_id,sign_or_sequence,proposed_meaning,evidence_refs,corpus_refs,observation_refs,alternative_explanations,confidence,status,notes\nR-001,fixture,fixture,SRC-003,D,O-001,fixture,High,active,fixture\n",
-        )?;
-        Ok(())
+    if !allowed.contains(&value) {
+        let shown = if value.is_empty() { "<empty>" } else { value };
+        report.error(format!(
+            "{label} row {row} has invalid {column}={shown}; expected one of: {}",
+            allowed.join(", ")
+        ));
     }
 }

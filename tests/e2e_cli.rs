@@ -108,7 +108,7 @@ fn e2e_intake_template_and_promotion_gates_work() {
 
     let mut claim = Command::cargo_bin("rongorongo").unwrap();
     claim
-        .args(["promote", "claim", "C-003"])
+        .args(["promote", "claim", "C-002"])
         .assert()
         .success()
         .stdout(predicate::str::contains("ready=true"));

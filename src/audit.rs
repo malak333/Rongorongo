@@ -2,10 +2,11 @@ use crate::model::{
     ClaimRecord, CorpusObject, HypothesisRecord, ObservationRecord, ReadingRecord, SequenceRecord,
     SourceRecord,
 };
-use crate::validate::{ValidationLevel, ValidationMessage, ValidationReport};
+use crate::validate::ValidationReport;
+use crate::workflow::{self, KnownIds};
 use anyhow::{Context, Result};
 use serde::Serialize;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 #[derive(Debug, Serialize)]
@@ -24,186 +25,433 @@ pub struct AuditSummary {
 #[derive(Debug)]
 pub struct AuditReport {
     pub validation: ValidationReport,
-    pub summary: AuditSummary,
+    pub summary: Option<AuditSummary>,
+}
+
+/// Sentinel used in `readings.proposed_meaning` for an explicit non-claim.
+pub const NO_READING: &str = "none-proposed";
+
+pub struct Workspace {
+    pub corpus: Vec<CorpusObject>,
+    pub sources: Vec<SourceRecord>,
+    pub hypotheses: Vec<HypothesisRecord>,
+    pub claims: Vec<ClaimRecord>,
+    pub observations: Vec<ObservationRecord>,
+    pub sequences: Vec<SequenceRecord>,
+    pub readings: Vec<ReadingRecord>,
+}
+
+impl Workspace {
+    pub fn load(root: &Path) -> Result<Self> {
+        Ok(Self {
+            corpus: read_csv(&root.join("data/corpus-index.csv"))?,
+            sources: read_csv(&root.join("data/source-registry.csv"))?,
+            hypotheses: read_csv(&root.join("data/hypotheses.csv"))?,
+            claims: read_csv(&root.join("data/claims.csv"))?,
+            observations: read_csv(&root.join("data/observations.csv"))?,
+            sequences: read_csv(&root.join("data/sequences.csv"))?,
+            readings: read_csv(&root.join("data/readings.csv"))?,
+        })
+    }
 }
 
 pub fn audit_workspace(root: &Path, strict: bool) -> Result<AuditReport> {
     let mut validation = crate::validate::validate_workspace(root, strict)?;
+    if !validation.schema_valid {
+        validation.error(
+            "cross-reference audit skipped because required files or headers are invalid"
+                .to_string(),
+        );
+        return Ok(AuditReport {
+            validation,
+            summary: None,
+        });
+    }
 
-    let corpus = read_csv::<CorpusObject>(&root.join("data/corpus-index.csv"))?;
-    let sources = read_csv::<SourceRecord>(&root.join("data/source-registry.csv"))?;
-    let hypotheses = read_csv::<HypothesisRecord>(&root.join("data/hypotheses.csv"))?;
-    let claims = read_csv::<ClaimRecord>(&root.join("data/claims.csv"))?;
-    let observations = read_csv::<ObservationRecord>(&root.join("data/observations.csv"))?;
-    let sequences = read_csv::<SequenceRecord>(&root.join("data/sequences.csv"))?;
-    let readings = read_csv::<ReadingRecord>(&root.join("data/readings.csv"))?;
+    let ws = Workspace::load(root)?;
+    let report = &mut validation;
 
-    let source_ids: HashSet<&str> = sources
+    let known = KnownIds {
+        sources: ws.sources.iter().map(|s| s.source_id.as_str()).collect(),
+        corpus: ws.corpus.iter().map(|c| c.catalog_id.as_str()).collect(),
+        observations: ws
+            .observations
+            .iter()
+            .map(|o| o.observation_id.as_str())
+            .collect(),
+    };
+    let reliability: HashMap<&str, &str> = ws
+        .sources
         .iter()
-        .map(|source| source.source_id.as_str())
+        .map(|s| (s.source_id.as_str(), s.reliability.as_str()))
         .collect();
-    let corpus_ids: HashSet<&str> = corpus
+    let observations: HashMap<&str, &ObservationRecord> = ws
+        .observations
         .iter()
-        .map(|object| object.catalog_id.as_str())
-        .collect();
-    let observation_ids: HashSet<&str> = observations
-        .iter()
-        .map(|observation| observation.observation_id.as_str())
+        .map(|o| (o.observation_id.as_str(), o))
         .collect();
 
-    for object in &corpus {
+    for object in &ws.corpus {
+        let subject = format!("corpus {}", object.catalog_id);
         check_refs(
-            &mut validation,
-            "corpus transcription_source",
-            &object.object_name,
+            report,
+            &subject,
+            "transcription_source",
             &object.transcription_source,
-            &source_ids,
+            &known.sources,
+            false,
+        );
+        // The corpus row restates its transcription source's reliability; keep them in sync.
+        if let Some(actual) = reliability.get(object.transcription_source.trim()) {
+            if object.source_reliability != *actual {
+                report.error(format!(
+                    "{subject} source_reliability={} but {} has reliability={actual}",
+                    object.source_reliability, object.transcription_source
+                ));
+            }
+        }
+        check_confidence_cap(
+            report,
+            &subject,
+            "inclusion_confidence",
+            &object.inclusion_confidence,
+            &object.transcription_source,
+            &reliability,
         );
     }
 
-    for claim in &claims {
+    for claim in &ws.claims {
+        let subject = format!("claim {}", claim.claim_id);
         check_refs(
-            &mut validation,
-            "claim evidence_refs",
-            &claim.claim_id,
+            report,
+            &subject,
+            "evidence_refs",
             &claim.evidence_refs,
-            &source_ids,
+            &known.sources,
+            false,
         );
-        check_optional_refs(
-            &mut validation,
-            "claim corpus_refs",
-            &claim.claim_id,
+        check_refs(
+            report,
+            &subject,
+            "corpus_refs",
             &claim.corpus_refs,
-            &corpus_ids,
+            &known.corpus,
             true,
         );
-    }
-
-    for observation in &observations {
-        check_refs(
-            &mut validation,
-            "observation source_refs",
-            &observation.observation_id,
-            &observation.source_refs,
-            &source_ids,
+        check_confidence_cap(
+            report,
+            &subject,
+            "confidence",
+            &claim.confidence,
+            &claim.evidence_refs,
+            &reliability,
         );
-        check_refs(
-            &mut validation,
-            "observation corpus_id",
-            &observation.observation_id,
-            &observation.corpus_id,
-            &corpus_ids,
-        );
-    }
-
-    for hypothesis in &hypotheses {
-        check_refs(
-            &mut validation,
-            "hypothesis evidence_refs",
-            &hypothesis.hypothesis_id,
-            &hypothesis.evidence_refs,
-            &source_ids,
-        );
-        check_corpus_refs(
-            &mut validation,
-            "hypothesis corpus_refs",
-            &hypothesis.hypothesis_id,
-            &hypothesis.corpus_refs,
-            &corpus_ids,
-        );
-        check_refs(
-            &mut validation,
-            "hypothesis observation_refs",
-            &hypothesis.hypothesis_id,
-            &hypothesis.observation_refs,
-            &observation_ids,
-        );
-    }
-
-    for sequence in &sequences {
-        check_refs(
-            &mut validation,
-            "sequence source_refs",
-            &sequence.sequence_id,
-            &sequence.source_refs,
-            &source_ids,
-        );
-        check_corpus_refs(
-            &mut validation,
-            "sequence corpus_refs",
-            &sequence.sequence_id,
-            &sequence.corpus_refs,
-            &corpus_ids,
-        );
-        check_refs(
-            &mut validation,
-            "sequence observation_refs",
-            &sequence.sequence_id,
-            &sequence.observation_refs,
-            &observation_ids,
-        );
-    }
-
-    for reading in &readings {
-        check_refs(
-            &mut validation,
-            "reading evidence_refs",
-            &reading.reading_id,
-            &reading.evidence_refs,
-            &source_ids,
-        );
-        check_corpus_refs(
-            &mut validation,
-            "reading corpus_refs",
-            &reading.reading_id,
-            &reading.corpus_refs,
-            &corpus_ids,
-        );
-        check_refs(
-            &mut validation,
-            "reading observation_refs",
-            &reading.reading_id,
-            &reading.observation_refs,
-            &observation_ids,
-        );
-        if reading.alternative_explanations.trim().is_empty() {
-            push_error(
-                &mut validation,
-                format!(
-                    "reading {} is missing alternative explanations",
-                    reading.reading_id
-                ),
+        if claim.status == "promoted" {
+            require_gate(
+                report,
+                &subject,
+                workflow::claim_promotion_checks(claim, &known),
             );
         }
     }
 
+    for observation in &ws.observations {
+        let subject = format!("observation {}", observation.observation_id);
+        check_refs(
+            report,
+            &subject,
+            "source_refs",
+            &observation.source_refs,
+            &known.sources,
+            false,
+        );
+        check_refs(
+            report,
+            &subject,
+            "corpus_id",
+            &observation.corpus_id,
+            &known.corpus,
+            false,
+        );
+        check_confidence_cap(
+            report,
+            &subject,
+            "confidence",
+            &observation.confidence,
+            &observation.source_refs,
+            &reliability,
+        );
+        if observation.status == "promoted" {
+            require_promotable_confidence(report, &subject, &observation.confidence);
+        }
+    }
+
+    for hypothesis in &ws.hypotheses {
+        let subject = format!("hypothesis {}", hypothesis.hypothesis_id);
+        check_refs(
+            report,
+            &subject,
+            "evidence_refs",
+            &hypothesis.evidence_refs,
+            &known.sources,
+            false,
+        );
+        check_refs(
+            report,
+            &subject,
+            "corpus_refs",
+            &hypothesis.corpus_refs,
+            &known.corpus,
+            true,
+        );
+        check_refs(
+            report,
+            &subject,
+            "observation_refs",
+            &hypothesis.observation_refs,
+            &known.observations,
+            false,
+        );
+        check_confidence_cap(
+            report,
+            &subject,
+            "confidence",
+            &hypothesis.confidence,
+            &hypothesis.evidence_refs,
+            &reliability,
+        );
+        if hypothesis.status == "accepted-working-rule" {
+            require_gate(
+                report,
+                &subject,
+                workflow::hypothesis_promotion_checks(hypothesis, &known),
+            );
+        }
+    }
+
+    for sequence in &ws.sequences {
+        let subject = format!("sequence {}", sequence.sequence_id);
+        check_refs(
+            report,
+            &subject,
+            "source_refs",
+            &sequence.source_refs,
+            &known.sources,
+            false,
+        );
+        check_refs(
+            report,
+            &subject,
+            "corpus_refs",
+            &sequence.corpus_refs,
+            &known.corpus,
+            true,
+        );
+        check_refs(
+            report,
+            &subject,
+            "observation_refs",
+            &sequence.observation_refs,
+            &known.observations,
+            false,
+        );
+        check_confidence_cap(
+            report,
+            &subject,
+            "confidence",
+            &sequence.confidence,
+            &sequence.source_refs,
+            &reliability,
+        );
+        if sequence.status == "promoted" {
+            require_promotable_confidence(report, &subject, &sequence.confidence);
+        }
+    }
+
+    for reading in &ws.readings {
+        let subject = format!("reading {}", reading.reading_id);
+        check_refs(
+            report,
+            &subject,
+            "evidence_refs",
+            &reading.evidence_refs,
+            &known.sources,
+            false,
+        );
+        check_refs(
+            report,
+            &subject,
+            "corpus_refs",
+            &reading.corpus_refs,
+            &known.corpus,
+            true,
+        );
+        check_refs(
+            report,
+            &subject,
+            "observation_refs",
+            &reading.observation_refs,
+            &known.observations,
+            false,
+        );
+        check_confidence_cap(
+            report,
+            &subject,
+            "confidence",
+            &reading.confidence,
+            &reading.evidence_refs,
+            &reliability,
+        );
+        if reading.alternative_explanations.trim().is_empty() {
+            report.error(format!("{subject} is missing alternative explanations"));
+        }
+        if reading.proposed_meaning.trim() != NO_READING {
+            check_semantic_reading(report, &subject, reading, &observations);
+        }
+        if reading.status == "promoted" {
+            require_promotable_confidence(report, &subject, &reading.confidence);
+        }
+    }
+
+    crate::docs_sync::check_markdown_sync(report, root, &ws)?;
+
     let summary = AuditSummary {
-        corpus_objects: corpus.len(),
-        sources: sources.len(),
-        claims: claims.len(),
-        observations: observations.len(),
-        sequences: sequences.len(),
-        readings: readings.len(),
-        hypotheses: hypotheses.len(),
-        promoted_claims: claims
+        corpus_objects: ws.corpus.len(),
+        sources: ws.sources.len(),
+        claims: ws.claims.len(),
+        observations: ws.observations.len(),
+        sequences: ws.sequences.len(),
+        readings: ws.readings.len(),
+        hypotheses: ws.hypotheses.len(),
+        promoted_claims: ws.claims.iter().filter(|c| c.status == "promoted").count(),
+        active_hypotheses: ws
+            .hypotheses
             .iter()
-            .filter(|claim| claim.status.eq_ignore_ascii_case("promoted"))
-            .count(),
-        active_hypotheses: hypotheses
-            .iter()
-            .filter(|hypothesis| {
-                hypothesis.status.eq_ignore_ascii_case("active")
-                    || hypothesis
-                        .status
-                        .eq_ignore_ascii_case("accepted-working-rule")
-            })
+            .filter(|h| h.status == "active" || h.status == "accepted-working-rule")
             .count(),
     };
 
     Ok(AuditReport {
         validation,
-        summary,
+        summary: Some(summary),
     })
+}
+
+/// Rank used to compare confidence and reliability labels. `Mixed` sources
+/// count as Medium: they can support Medium conclusions but not High ones.
+fn rank(label: &str) -> Option<u8> {
+    match label {
+        "High" => Some(3),
+        "Medium" | "Mixed" => Some(2),
+        "Low" => Some(1),
+        _ => None,
+    }
+}
+
+/// A row's confidence may not exceed the reliability of the strongest source it cites.
+fn check_confidence_cap(
+    report: &mut ValidationReport,
+    subject: &str,
+    column: &str,
+    confidence: &str,
+    refs: &str,
+    reliability: &HashMap<&str, &str>,
+) {
+    let Some(claimed) = rank(confidence) else {
+        return;
+    };
+    let strongest = split_refs(refs)
+        .filter_map(|id| reliability.get(id).copied())
+        .max_by_key(|label| rank(label).unwrap_or(0));
+    let Some(strongest) = strongest else {
+        return;
+    };
+    if claimed > rank(strongest).unwrap_or(0) {
+        report.error(format!(
+            "{subject} {column}={confidence} exceeds the strongest cited source reliability ({strongest})"
+        ));
+    }
+}
+
+/// A semantic reading must rest on promoted structural observations, and may
+/// not be more confident than the weakest observation it depends on.
+fn check_semantic_reading(
+    report: &mut ValidationReport,
+    subject: &str,
+    reading: &ReadingRecord,
+    observations: &HashMap<&str, &ObservationRecord>,
+) {
+    for id in split_refs(&reading.observation_refs) {
+        let Some(observation) = observations.get(id) else {
+            continue; // unknown ids are already reported by check_refs
+        };
+        if observation.status != "promoted" {
+            report.error(format!(
+                "{subject} proposes a meaning but cites observation {id} with status={}; semantic readings require promoted observations",
+                observation.status
+            ));
+        }
+        if let (Some(claimed), Some(basis)) =
+            (rank(&reading.confidence), rank(&observation.confidence))
+        {
+            if claimed > basis {
+                report.error(format!(
+                    "{subject} confidence={} exceeds the confidence of observation {id} ({})",
+                    reading.confidence, observation.confidence
+                ));
+            }
+        }
+    }
+}
+
+fn require_gate(
+    report: &mut ValidationReport,
+    subject: &str,
+    checks: Vec<workflow::PromotionCheckItem>,
+) {
+    for item in checks.into_iter().filter(|item| !item.passed) {
+        report.error(format!(
+            "{subject} is marked promoted but fails promotion gate '{}': {}",
+            item.name, item.detail
+        ));
+    }
+}
+
+fn require_promotable_confidence(report: &mut ValidationReport, subject: &str, confidence: &str) {
+    if !workflow::is_promotable_confidence(confidence) {
+        report.error(format!(
+            "{subject} is marked promoted but has confidence={confidence}; promotion requires Medium or High"
+        ));
+    }
+}
+
+pub fn split_refs(refs: &str) -> impl Iterator<Item = &str> {
+    refs.split(';')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+fn check_refs(
+    report: &mut ValidationReport,
+    subject: &str,
+    column: &str,
+    refs: &str,
+    known: &HashSet<&str>,
+    allow_corpus_wide: bool,
+) {
+    let mut any = false;
+    for value in split_refs(refs) {
+        any = true;
+        if allow_corpus_wide && value == "corpus-wide" {
+            continue;
+        }
+        if !known.contains(value) {
+            report.error(format!("{subject} {column} references unknown id {value}"));
+        }
+    }
+    if !any {
+        report.error(format!("{subject} {column} is empty"));
+    }
 }
 
 fn read_csv<T>(path: &Path) -> Result<Vec<T>>
@@ -216,99 +464,4 @@ where
         .deserialize()
         .collect::<Result<Vec<T>, csv::Error>>()
         .with_context(|| format!("failed to parse CSV at {}", path.display()))
-}
-
-fn check_refs(
-    report: &mut ValidationReport,
-    label: &str,
-    subject: &str,
-    refs: &str,
-    known: &HashSet<&str>,
-) {
-    let values: Vec<&str> = refs
-        .split(';')
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .collect();
-
-    if values.is_empty() {
-        push_error(report, format!("{label} for {subject} is empty"));
-        return;
-    }
-
-    for value in values {
-        if !known.contains(value) {
-            push_error(
-                report,
-                format!("{label} for {subject} references unknown id {value}"),
-            );
-        }
-    }
-}
-
-fn check_corpus_refs(
-    report: &mut ValidationReport,
-    label: &str,
-    subject: &str,
-    refs: &str,
-    known: &HashSet<&str>,
-) {
-    let values: Vec<&str> = refs
-        .split(';')
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .collect();
-
-    if values.is_empty() {
-        push_error(report, format!("{label} for {subject} is empty"));
-        return;
-    }
-
-    for value in values {
-        if value != "corpus-wide" && !known.contains(value) {
-            push_error(
-                report,
-                format!("{label} for {subject} references unknown id {value}"),
-            );
-        }
-    }
-}
-
-fn check_optional_refs(
-    report: &mut ValidationReport,
-    label: &str,
-    subject: &str,
-    refs: &str,
-    known: &HashSet<&str>,
-    allow_corpus_wide: bool,
-) {
-    if refs.trim().is_empty() {
-        push_error(report, format!("{label} for {subject} is empty"));
-        return;
-    }
-    if allow_corpus_wide && refs.trim() == "corpus-wide" {
-        return;
-    }
-    check_refs(report, label, subject, refs, known);
-}
-
-fn push_error(report: &mut ValidationReport, message: String) {
-    report.error_count += 1;
-    report.messages.push(ValidationMessage {
-        level: ValidationLevel::Error,
-        message,
-    });
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn audits_current_workspace_cross_references() {
-        let report = audit_workspace(Path::new(env!("CARGO_MANIFEST_DIR")), true).unwrap();
-        assert_eq!(report.validation.error_count, 0);
-        assert_eq!(report.summary.sources, 5);
-        assert_eq!(report.summary.claims, 3);
-    }
 }
