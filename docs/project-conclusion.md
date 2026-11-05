@@ -72,6 +72,11 @@ and redistributable:
 | SRC-004, CEIPP / Kohaumotu digitized corpus | Barthel encodings | No license stated; offered to bona fide researchers | No, without permission |
 | rongopy (GitHub) | Corpus, Barthel and Horley codes | GPL-3.0 on the repository | No: derived from Barthel, which the repository cannot relicense |
 | Self-published Zenodo deposits | Various | Various Creative Commons | No: not peer-reviewed, and data provenance traces to Barthel |
+| Van Vyve 2026, ULiège master's thesis (promotor Ravanelli) | Glyph extraction from 3D models of Texts A–D (INSCRIBE corpus) | Embargoed until 2027-06-30; copyright, no open license | No: no transcription; sign inventory named as future work |
+
+Daily re-checks of the same sources found nothing new that qualifies (last
+check 2026-11-05). The INSCRIBE glyph-extraction work (Van Vyve 2026) is the
+most likely path to an A–D sign inventory; recheck it after its embargo ends.
 
 So the project has done what can be done with redistributable material. The
 remaining work is not more code.
