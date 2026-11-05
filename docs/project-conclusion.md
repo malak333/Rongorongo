@@ -1,6 +1,6 @@
 # Project Conclusion (v1)
 
-Status as of 2026-11-05. This report closes the first phase of the project:
+Status as of 2026-11-05 (release v1.0.0). This report closes the first phase of the project:
 what it set out to do, what it established, why it stops here, and what
 would reopen it. Every finding cites a register id, so it can be checked with
 `cargo run -- audit --strict` and the commands listed below.

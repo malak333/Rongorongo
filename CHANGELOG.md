@@ -7,6 +7,40 @@ not a packaged software artifact.
 
 ## Unreleased
 
+Nothing yet.
+
+## 2026-11-05 — v1.0.0 (phase one)
+
+First tagged release. It closes phase one; `docs/project-conclusion.md` is the
+full report. This is a release of a research workflow and one verified
+transcription. It contains no decipherment and implies no scholarly
+acceptance.
+
+### Release summary
+
+- **Corpus scope.** One object: Text D (Échancrée tablet), 14 lines,
+  211 elements, from SRC-003 under CC BY-NC 4.0. No other tablet's
+  transcription is currently redistributable (survey in the conclusion
+  report, section 5).
+- **Source registry.** SRC-001 to SRC-007. New in this release: SRC-006
+  (2024 radiocarbon dating, CC BY 4.0) and SRC-007 (2022 Tablet C
+  transcription, paywalled, registered but not imported).
+- **Promoted evidence.** Claims C-001, C-002, C-004. Observations O-002,
+  O-003, O-004, O-007. Sequence S-004 (the Da3 template). H-001 is an accepted
+  working rule.
+- **Still active, not promoted.** O-001, O-005, O-006; S-002, S-003; H-002;
+  H-003 (Low: the Da3 template as a formula cannot be tested on one tablet).
+- **Superseded or removed.** S-001 is superseded. C-003 was removed from the
+  claims register and moved to the notebook decision log.
+- **Readings.** R-001 records the explicit non-claim. No semantic reading is
+  proposed.
+- **Known limitations.** Every open question needs a second tablet. The
+  transcription has 211 elements against the source's 212 (O-007). Doubtful
+  readings are excluded from repeat detection, so counts are conservative.
+- **Verification.** `./scripts/ci.sh` and `cargo run -- audit --strict` pass;
+  the manual checks in `docs/release-readiness.md` find no secrets and no
+  tracked PDFs or images.
+
 ### Added
 
 - Added public release hygiene files for licensing, contribution guidance,
