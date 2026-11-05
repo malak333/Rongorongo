@@ -234,6 +234,7 @@ const TRANSCRIPTION_SPEC: CsvSpec = CsvSpec {
         "source_ref",
         "license",
         "raw_text",
+        "marked_text",
         "notes",
     ],
     required_columns: &[
@@ -243,6 +244,7 @@ const TRANSCRIPTION_SPEC: CsvSpec = CsvSpec {
         "source_ref",
         "license",
         "raw_text",
+        "marked_text",
     ],
     id_column: "line_id",
     confidence_columns: &[],

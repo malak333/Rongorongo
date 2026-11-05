@@ -236,7 +236,8 @@ struct ElementsArgs {
     /// Only show this line, e.g. Da1.
     #[arg(long)]
     line: Option<String>,
-    /// Only show elements that are uncertain, ambiguous, unparsed, or in a lacuna.
+    /// Only show elements that are doubtful, uncertain, ambiguous, unparsed, in a
+    /// lacuna, or after a soft boundary.
     #[arg(long)]
     problems: bool,
     #[command(flatten)]
@@ -253,8 +254,33 @@ struct AnalyzeCommand {
 enum AnalyzeSubcommand {
     /// Count signs by Barthel base number.
     Frequency(FrequencyArgs),
-    /// Find repeated runs of certain elements within lines.
+    /// Find repeated runs of certain elements (or signs) within lines.
     Sequences(SequencesArgs),
+    /// Search for a sequence of elements, e.g. "600|610 * 200.52x.*".
+    Find(FindArgs),
+}
+
+#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+enum LevelArg {
+    /// Compare whole graphic elements.
+    Element,
+    /// Compare individual signs, ignoring whether they are ligatured.
+    Part,
+}
+
+#[derive(Debug, Args)]
+struct FindArgs {
+    /// Repository root. Defaults to the current directory.
+    #[arg(long, default_value = ".")]
+    root: PathBuf,
+    /// Restrict to one corpus object, e.g. "Text D / D".
+    #[arg(long)]
+    corpus: Option<String>,
+    /// Element patterns separated by spaces or dashes; `|` for alternatives,
+    /// `*` as a wildcard. A lone `*` matches any one element.
+    pattern: String,
+    #[command(flatten)]
+    format: FormatArgs,
 }
 
 #[derive(Debug, Args)]
@@ -280,7 +306,10 @@ struct SequencesArgs {
     /// Restrict to one corpus object, e.g. "Text D / D".
     #[arg(long)]
     corpus: Option<String>,
-    /// Minimum number of elements in a run (at least 2).
+    /// Compare whole elements or individual signs.
+    #[arg(long, value_enum, default_value = "element")]
+    level: LevelArg,
+    /// Minimum number of elements (or signs) in a run (at least 2).
     #[arg(long, default_value_t = 2)]
     min_length: usize,
     /// Minimum number of occurrences (at least 2).
@@ -394,12 +423,25 @@ impl Cli {
                 }
                 AnalyzeSubcommand::Sequences(args) => {
                     let elements = load_elements(&args.root, args.corpus.as_deref())?;
+                    let level = match args.level {
+                        LevelArg::Element => transcription::Level::Element,
+                        LevelArg::Part => transcription::Level::Part,
+                    };
                     let repeats = transcription::repeated_sequences(
                         &elements,
+                        level,
                         args.min_length,
                         args.min_count,
                     );
                     print_rows(&repeats, args.format.format, sequence_repeat_columns)?;
+                    print_attribution(args.format.format);
+                    Ok(())
+                }
+                AnalyzeSubcommand::Find(args) => {
+                    let elements = load_elements(&args.root, args.corpus.as_deref())?;
+                    let matches = transcription::find_pattern(&elements, &args.pattern)
+                        .map_err(anyhow::Error::msg)?;
+                    print_rows(&matches, args.format.format, pattern_match_columns)?;
                     print_attribution(args.format.format);
                     Ok(())
                 }
@@ -514,7 +556,7 @@ fn load_lines(root: &Path, corpus: Option<&str>) -> Result<Vec<TranscriptionLine
 fn load_elements(root: &Path, corpus: Option<&str>) -> Result<Vec<Element>> {
     Ok(load_lines(root, corpus)?
         .iter()
-        .flat_map(|line| transcription::parse_line(&line.line_id, &line.raw_text))
+        .flat_map(|line| transcription::parse_line(&line.line_id, &line.marked_text))
         .collect())
 }
 
@@ -542,7 +584,7 @@ fn print_frequency(report: &transcription::FrequencyReport, format: OutputFormat
                 );
             }
             println!(
-                "\n{} elements, {} parts. count = certain single readings; possible = marked uncertain (•) or one of several (/) readings.",
+                "\n{} elements, {} parts. count = certain single readings; possible = underlined (doubtful), marked uncertain (•), or one of several (/) readings.",
                 report.elements, report.parts
             );
             if !report.unparsed.is_empty() {
@@ -566,8 +608,14 @@ fn element_status(element: &Element) -> &'static str {
         "unparsed"
     } else if element.parts.iter().any(|p| p.alternatives.len() > 1) {
         "ambiguous"
+    } else if element.doubtful_join || signs().any(|s| s.doubtful) {
+        "doubtful"
     } else if element.is_uncertain() {
         "uncertain"
+    } else if element.boundary_possible_join {
+        "possible-join"
+    } else if element.boundary_doubtful {
+        "doubtful-boundary"
     } else if element.irregular_separator {
         "irregular-separator"
     } else {
@@ -581,7 +629,7 @@ fn transcription_columns(row: &TranscriptionLine) -> Vec<(&'static str, String)>
         ("corpus_id", row.corpus_id.clone()),
         (
             "elements",
-            transcription::parse_line(&row.line_id, &row.raw_text)
+            transcription::parse_line(&row.line_id, &row.marked_text)
                 .len()
                 .to_string(),
         ),
@@ -594,18 +642,35 @@ fn element_columns(row: &Element) -> Vec<(&'static str, String)> {
     vec![
         ("line", row.line_id.clone()),
         ("pos", row.position.to_string()),
-        ("raw", row.raw.clone()),
+        ("text", row.marked.clone()),
         ("status", element_status(row).to_string()),
         ("annotations", row.annotations.join("; ")),
     ]
 }
 
 fn sequence_repeat_columns(row: &transcription::RepeatedSequence) -> Vec<(&'static str, String)> {
-    vec![
+    let mut columns = vec![
         ("sequence", row.sequence.clone()),
         ("length", row.length.to_string()),
         ("count", row.count.to_string()),
         ("locations", row.locations.join(", ")),
+    ];
+    if !row.forms.is_empty() {
+        columns.push(("forms", row.forms.join(", ")));
+    }
+    columns
+}
+
+fn pattern_match_columns(row: &transcription::PatternMatch) -> Vec<(&'static str, String)> {
+    vec![
+        ("line", row.line_id.clone()),
+        ("start", row.start.to_string()),
+        ("end", row.end.to_string()),
+        ("text", row.text.clone()),
+        (
+            "certain",
+            if row.certain { "yes" } else { "no" }.to_string(),
+        ),
     ]
 }
 

@@ -146,3 +146,84 @@ fn e2e_text_d_transcription_parses_and_analyzes() {
             "sequence\tlength\tcount\tlocations",
         ));
 }
+
+/// Every element position Lastilla et al. 2022 cite in sections 4.1-4.3,
+/// with the element the parser must find there. Their numbering is the
+/// reference: if the parser drifts from it, this test fails.
+#[test]
+fn e2e_parser_matches_positions_cited_by_the_source() {
+    let cited: &[(&str, usize, &str)] = &[
+        ("Da1", 7, "381/741"),
+        ("Da1", 18, "522f"),
+        ("Da1", 19, "99"),
+        ("Da2", 10, "441.95x.3"),
+        ("Da2", 11, "445.107.1"),
+        ("Da2", 15, "173(=5.225/325)"),
+        ("Da3", 2, "42:200.41/11"),
+        ("Da5", 8, "93"),
+        ("Da5", 12, "93"),
+        ("Da6", 3, "3.3.52"),
+        ("Da6", 4, "50"),
+        ("Da6", 9, "50"),
+        ("Da6", 14, "•"),
+        ("Da6", 15, "7"),
+        ("Da6", 16, "60•"),
+        ("Db2", 12, "520f"),
+        ("Db3", 11, "280.63"),
+        ("Db4", 12, "7"),
+        ("Db4", 13, "600"),
+        ("Db4", 14, "7.10"),
+        ("Db4", 15, "•"),
+        ("Db5", 1, "522f.700"),
+        ("Db5", 3, "200.524f.78"),
+        ("Db5", 13, "445"),
+        ("Db5", 14, "445"),
+        ("Db6", 2, "55"),
+        ("Db6", 3, "9"),
+        ("Db6", 6, "6/55"),
+        ("Db6", 7, "7"),
+        ("Db6", 8, "600"),
+        ("Db6", 9, "7"),
+        ("Db6", 14, "22f"),
+    ];
+
+    let mut command = Command::cargo_bin("rongorongo").unwrap();
+    let assert = command
+        .args(["transcriptions", "elements", "--format", "json"])
+        .assert()
+        .success();
+    let output = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let elements: Vec<serde_json::Value> = serde_json::from_str(&output).unwrap();
+
+    for (line, position, expected) in cited {
+        let found = elements
+            .iter()
+            .find(|e| e["line_id"] == *line && e["position"] == *position)
+            .unwrap_or_else(|| panic!("{line}.{position} not found"));
+        assert_eq!(found["raw"], *expected, "{line}.{position}");
+    }
+
+    // Per-line counts from the numbered drawings (Figs. 16 and 17), except
+    // Da7: its printed transcription has 15 elements but Fig. 16 numbers 16.
+    let figure_counts = [
+        ("Da1", 19),
+        ("Da2", 16),
+        ("Da3", 15),
+        ("Da4", 16),
+        ("Da5", 20),
+        ("Da6", 16),
+        ("Da7", 15),
+        ("Da8", 8),
+        ("Db1", 15),
+        ("Db2", 13),
+        ("Db3", 15),
+        ("Db4", 15),
+        ("Db5", 14),
+        ("Db6", 14),
+    ];
+    for (line, count) in figure_counts {
+        let actual = elements.iter().filter(|e| e["line_id"] == line).count();
+        assert_eq!(actual, count, "{line}");
+    }
+    assert_eq!(elements.len(), 211, "212 in the source, less Da7's gap");
+}

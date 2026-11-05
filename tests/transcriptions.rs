@@ -101,6 +101,49 @@ fn audit_rejects_duplicate_line_ids() {
 }
 
 #[test]
+fn audit_rejects_marked_text_that_differs_from_raw_text() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "data/transcriptions/lines.csv",
+        &common::TRANSCRIPTIONS.replace("–{9}–8[", "–{9}–7["),
+    );
+    fixture
+        .run(&["audit", "--strict"])
+        .failure()
+        .stdout(predicate::str::contains(
+            "transcription Db1 marked_text without {} marks does not equal raw_text",
+        ));
+}
+
+#[test]
+fn audit_rejects_unbalanced_underline_marks() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "data/transcriptions/lines.csv",
+        &common::TRANSCRIPTIONS.replace("–{9}–8[", "–{9–8["),
+    );
+    fixture
+        .run(&["audit", "--strict"])
+        .failure()
+        .stdout(predicate::str::contains(
+            "transcription Db1 marked_text has unbalanced or nested {} marks",
+        ));
+}
+
+#[test]
+fn underlined_signs_count_as_possible_not_certain() {
+    let fixture = Fixture::new();
+    fixture
+        .run(&["analyze", "frequency"])
+        .success()
+        .stdout(predicate::str::contains("9\t0\t1\tDb1"));
+    fixture
+        .run(&["transcriptions", "elements", "--problems"])
+        .success()
+        .stdout(predicate::str::contains("Db1\t7\t{9}\tdoubtful"));
+}
+
+#[test]
 fn frequency_separates_certain_possible_and_unparsed() {
     let fixture = Fixture::new();
     fixture
@@ -151,4 +194,42 @@ fn elements_problems_lists_only_flagged_elements() {
         .stdout(predicate::str::contains("Db1\t2\t400/600\tambiguous"))
         .stdout(predicate::str::contains("Db1\t4\t3•6\tunparsed"))
         .stdout(predicate::str::contains("Da1\t1\t").not());
+}
+
+#[test]
+fn find_reports_matches_and_certainty() {
+    let fixture = Fixture::new();
+    fixture
+        .run(&["analyze", "find", "1 2|9 *"])
+        .success()
+        .stdout(predicate::str::contains("Da1\t1\t3\t1–2–3\tyes"))
+        .stdout(predicate::str::contains("Db1\t5\t7\t1–2–{9}\tno"))
+        .stdout(predicate::str::contains("CC BY-NC 4.0"));
+    fixture
+        .run(&["analyze", "find", "||"])
+        .failure()
+        .stderr(predicate::str::contains("empty alternative"));
+}
+
+#[test]
+fn sequences_part_level_lists_forms() {
+    let fixture = Fixture::new();
+    let assert = fixture
+        .run(&[
+            "analyze",
+            "sequences",
+            "--level",
+            "part",
+            "--format",
+            "json",
+        ])
+        .success();
+    let output = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
+    let rows = parsed.as_array().unwrap();
+    let first = rows
+        .iter()
+        .find(|r| r["sequence"] == "1 2 3")
+        .unwrap_or_else(|| panic!("{rows:?}"));
+    assert_eq!(first["forms"], serde_json::json!(["1–2–3 ×2"]));
 }

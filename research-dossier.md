@@ -29,7 +29,7 @@ Record sign inventory systems, glyph numbering schemes, normalization choices, a
 | System / Author | Source | Scope | Strengths | Limits | Adopted? |
 |---|---|---|---|---|---|
 | Barthel numerical transliteration | SRC-001; SRC-003 | Corpus-wide reference system | Common reference point for signs and variants | Includes variants and ligatures; not definitive | Provisionally |
-| Lastilla et al. Text D palaeographic analysis | SRC-003 | Text D | Based on 3D model and close palaeographic examination | One inscription only; underlining for doubtful readings is lost in the plain-text import; `(−)`, `(=...)`, and edge brackets are not defined in the article | For Text D. Imported verbatim to `data/transcriptions/lines.csv` under CC BY-NC 4.0 |
+| Lastilla et al. Text D palaeographic analysis | SRC-003 | Text D | Based on 3D model and close palaeographic examination | One inscription only; `(−)`, `(=...)`, and edge brackets are not defined in the article; printed transcription of Da7 has one element fewer than Fig. 16 | For Text D. Imported verbatim to `data/transcriptions/lines.csv` under CC BY-NC 4.0, checked against the typeset PDF, with underlined doubtful readings in `marked_text` |
 
 ## 5. Directionality And Reading Order
 

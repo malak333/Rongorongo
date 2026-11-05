@@ -34,17 +34,19 @@ Work from structure before meaning:
 
 Unregistered leads (do not cite until registered):
 
-- **522-99.** The imported transcription confirms `522f–99` closes line Da1 (parser elements Da1.17–18). An earlier note placed it at Da1.18–19; the difference is a numbering question not yet reconciled (see the 208 vs 212 element count in `data/transcriptions/LICENSE.md`). SRC-003's comparison with Text R remains unverified because Text R is not in the corpus index.
-- **Exact element repeats in Text D** (`cargo run -- analyze sequences`): `200.52x.s–600` (Da3.5–6, Da3.14–15), `2V.3–730` (Da5.2–3, Da5.10–11), `7–600` (Db4.12–13, Db6.7–8). These are exact matches only; uncertain, ambiguous, and unparsed elements are excluded.
-- **Da3 structure.** Da3 alternates `600` with compounds built on `200.52x` (`200.52x.s`, `200.52x.52`, `200.52x.69`). This is visible by eye but is not an exact element repeat, so the sequence command does not report it. A part-level comparison would be needed to test it.
+- **522-99.** `522f–99` closes line Da1 at Da1.18–19, matching SRC-003 §4.2.1. The `99` is underlined in the source (a doubtful reading): Barthel read the last element as 522, and the authors propose 99. The authors compare the line ending with `206s–522f–99` in Rb2 and note that `522–99` is attested in Text R. That comparison cannot be checked here until Text R is in the corpus index.
+- **Exact element repeats in Text D** (`cargo run -- analyze sequences`): `200.52x.s–600` (Da3.5–6, Da3.14–15) and `7–600` (Db4.12–13, Db6.7–8). Only exact matches count; uncertain, doubtful (underlined), ambiguous, and unparsed elements are excluded, and runs break at doubtful or possible-join boundaries. The authors also note `]380y–2V.3–730` and `1.380y–2V.3–730` in Da5 as identical, but the tool excludes that pair because its `2V.3` join and `380y` are underlined. The `7–600` lead is part of a parallel the authors discuss with Sb6 (SRC-003 §4.3); at sign level it extends to `7–600–7` in Db4 and Db6, matching the authors' note.
+- **Da3 structure.** SRC-003 §4.3 describes Da3 as repetitions of "bird-sign 600 (or 610) + changing glyph + 200.52x.appendage". `analyze find "600|610 * 200.52x.*"` returns exactly the four strings the authors list (Da3.3–5, 6–8, 9–11, 12–14), all with certain readings. The template is confirmed against the transcription, but its significance can't be judged from one tablet.
+- **The `200.52x` core** (`analyze sequences --level part`) occurs 5 times, always as a ligature and only in Da3; `2–200.52x` occurs twice. Inverted `52x` appears elsewhere only in Da4 (`52x.590.52x`); upright `200.52` occurs once in Db1. Whether the compound or its pattern recurs on other tablets is the obvious next test, and needs more of the corpus. The same section notes variations in Da4, duplications in Db3 (`383–383`, `1.63–1.63`, `2–2`) and Db4 (`50–50`, `700.244–700.244`, `240.8–240.8`), and repeated `445` at the end of Db5.
 
 ## 5. Sign Frequency
 
 | Sign | Count | Corpus Scope | Position Notes | Interpretation Risk |
 |---|---:|---|---|---|
-| 522 | 2 | Text D (SRC-003 transcription) | Da1.17 (`522f`, followed by `99`); Db5.1 (`522f.700`) | Do not infer meaning from isolated comparison |
+| 522 | 1 certain, 1 doubtful | Text D (SRC-003 transcription) | Da1.18 (`522f`, followed by `99`); Db5.1 (`52{2}f.700`, last digit underlined) | Do not infer meaning from isolated comparison |
+| 99 | 0 certain, 1 doubtful | Text D (SRC-003 transcription) | Da1.19, underlined; Barthel read 522 | Single doubtful occurrence |
 
-Counts come from `cargo run -- analyze frequency` (add `--exact` to keep variant suffixes such as `522f`). The command is the source of truth, so this table records only signs under discussion. Underlined doubtful readings in the source are not captured, so treat every count as provisional.
+Counts come from `cargo run -- analyze frequency` (add `--exact` to keep variant suffixes such as `522f`). The command is the source of truth, so this table records only signs under discussion. `count` is certain readings; underlined, `•`-marked, and `/`-alternative readings count as `possible`.
 
 ## 6. Structural Hypotheses
 

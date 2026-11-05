@@ -20,3 +20,5 @@ cargo run -- promote hypothesis H-002
 cargo run -- transcriptions list
 cargo run -- analyze frequency
 cargo run -- analyze sequences
+cargo run -- analyze sequences --level part
+cargo run -- analyze find "600|610 * 200.52x.*"

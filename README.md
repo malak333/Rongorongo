@@ -48,6 +48,8 @@ cargo run -- transcriptions list
 cargo run -- transcriptions elements --problems
 cargo run -- analyze frequency
 cargo run -- analyze sequences
+cargo run -- analyze sequences --level part
+cargo run -- analyze find "600|610 * 200.52x.*"
 ```
 
 Use `./scripts/ci.sh` as the local release gate. This repository intentionally does not use GitHub Actions.

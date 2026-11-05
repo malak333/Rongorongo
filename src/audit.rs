@@ -390,6 +390,22 @@ fn check_transcriptions(report: &mut ValidationReport, ws: &Workspace, known: &K
         if transcription::parse_line(&line.line_id, &line.raw_text).is_empty() {
             report.error(format!("{subject} raw_text contains no graphic elements"));
         }
+        // marked_text is raw_text plus `{}` around underlined (doubtful) spans.
+        if !transcription::marks_are_balanced(&line.marked_text) {
+            report.error(format!(
+                "{subject} marked_text has unbalanced or nested {{}} marks"
+            ));
+        } else {
+            let unmarked: String = transcription::unmark(&line.marked_text)
+                .into_iter()
+                .map(|(c, _)| c)
+                .collect();
+            if unmarked != line.raw_text {
+                report.error(format!(
+                    "{subject} marked_text without {{}} marks does not equal raw_text"
+                ));
+            }
+        }
     }
 }
 

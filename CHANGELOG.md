@@ -27,6 +27,24 @@ not a packaged software artifact.
   side, line ids that match the side, a license on every row, and a license
   notice file.
 
+### Added (analysis)
+
+- `analyze sequences --level part` compares individual signs, ignoring
+  ligature status, and reports how each occurrence was written.
+- `analyze find <pattern>` searches for element sequences with `|`
+  alternatives and `*` wildcards, flagging matches that are not certain.
+
+### Fixed (transcriptions)
+
+- Checked the Text D transcription against the typeset PDF. Corrected three
+  errors from the web capture (Da6 `60•`, Db1 `3••/40•`, Db3 en dash).
+- Added `marked_text` with the source's underlined doubtful readings.
+  Doubtful readings now count as `possible`, not certain, and are excluded
+  from repeat detection.
+- `(−)` now separates elements, matching the authors' numbering. The parser
+  counts 211 elements (source: 212; the gap is in the source's Da7). A test
+  checks all 32 element positions the authors cite.
+
 ### Changed
 
 - `audit --strict` now enforces the evidence rules instead of only checking

@@ -71,7 +71,9 @@ by hand, so the audit re-applies the gates to every row already promoted.
 - **Transcriptions.** If `data/transcriptions/lines.csv` exists, every row
   must cite a registered source and corpus object, use one of that object's
   sides, have a line id of the form `<side><number>`, name its license, and
-  parse into at least one element. `data/transcriptions/LICENSE.md` must exist.
+  parse into at least one element. `marked_text` must have balanced, unnested
+  `{}` marks and must equal `raw_text` once the marks are removed.
+  `data/transcriptions/LICENSE.md` must exist.
 - **Project decisions are not claims.** A choice the project makes without a
   supporting source belongs in the notebook decision log, not in
   `data/claims.csv` with a borrowed citation.
