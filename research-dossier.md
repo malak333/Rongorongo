@@ -15,6 +15,8 @@ Phase one covers the canonical, best-attested Rongorongo objects with establishe
 | SRC-003: Lastilla et al., Modelling the Rongorongo tablets | 2022 | peer-reviewed-open-access | Modern 3D and palaeographic analysis of Text D | Focused on Text D | High |
 | SRC-004: Kohaumotu / rongorongo.org digitized corpus pages | n.d. | digital-corpus-reference | Public corpus navigation and transliteration notes | Needs scholarly confirmation before high-confidence use | Medium |
 | SRC-005: Omniglot Rongorongo overview | n.d. | expert-secondary-web | Orientation and public-facing summary | Not suitable for detailed corpus claims | Low |
+| SRC-006: Ferrara et al., The invention of writing on Rapa Nui (Scientific Reports, CC BY 4.0) | 2024 | peer-reviewed-open-access | Radiocarbon dates for the wood of Tablets A–D | Dates the wood, not the inscription (terminus post quem) | High |
+| SRC-007: Valério, Lastilla, Ravanelli, The Rongorongo Tablet C (Lingue e linguaggio) | 2022 | peer-reviewed-article | New transcription of Tablet C | Paywalled; not accessed; transcription cannot be imported | High |
 
 ## 3. Corpus Scope
 
@@ -63,6 +65,7 @@ Use this section for small, checkable claims extracted from sources or corpus ob
 |---|---|---|---|---|---|---|
 | C-001 | Rongorongo remains undeciphered. | SRC-003; SRC-005 | peer-reviewed plus secondary overview | Agreement | Medium | This project must not claim fluent readings. Medium until additional high-reliability state-of-field sources are registered. |
 | C-002 | Accurate transcription is a prerequisite for decipherment attempts. | SRC-003 | peer-reviewed-open-access | Agreement within project method | High | This governs the Rust validation scope. |
+| C-004 | The wood of Text D dates to 1438–1462 cal AD (95.4%), or 1483–1520 after the felling-date correction; a terminus post quem, not a date for the inscription. | SRC-006 | peer-reviewed-open-access | Single sample | High | The authors' inference that writing predates European contact is not promoted here. |
 
 ## 9. Current Conclusions
 
@@ -71,3 +74,5 @@ Only promote conclusions here after they are traceable and have survived competi
 | Conclusion | Basis | Confidence | Open Risks |
 |---|---|---|---|
 | Production-ready v1 should validate research artifacts rather than claim decipherment. | Project scope plus C-001 and C-002 | High | A richer corpus may require revised validation rules. |
+| Text D's Da3 contains a repeated structural template, and the ligature 200.52x is specific to it within Text D. | O-003, O-004, S-004 | High | Significance cannot be judged without other tablets (H-003). |
+| No other tablet's transcription is currently available under redistributable terms, so corpus-wide tests are blocked. | Survey in `docs/project-conclusion.md` | High | Permission from SRC-007's authors or CEIPP would change this. |

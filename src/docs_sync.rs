@@ -166,12 +166,32 @@ fn is_separator(line: &str) -> bool {
             .all(|cell| !cell.is_empty() && cell.chars().all(|c| matches!(c, '-' | ':' | ' ')))
 }
 
+/// Split a table row into cells. As in GitHub-flavoured Markdown, `\|`
+/// is a literal pipe inside a cell, not a cell boundary.
 fn split_cells(line: &str) -> Vec<String> {
     let trimmed = line.trim();
     let inner = trimmed.strip_prefix('|').unwrap_or(trimmed);
-    let inner = inner.strip_suffix('|').unwrap_or(inner);
-    inner
-        .split('|')
+    let inner = if inner.ends_with('|') && !inner.ends_with("\\|") {
+        &inner[..inner.len() - 1]
+    } else {
+        inner
+    };
+    let mut cells = Vec::new();
+    let mut current = String::new();
+    let mut chars = inner.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '\\' if chars.peek() == Some(&'|') => {
+                current.push('|');
+                chars.next();
+            }
+            '|' => cells.push(std::mem::take(&mut current)),
+            _ => current.push(c),
+        }
+    }
+    cells.push(current);
+    cells
+        .into_iter()
         .map(|cell| cell.trim().to_string())
         .collect()
 }
@@ -226,6 +246,14 @@ intro
         assert_eq!(leading_id("X-001"), None);
         assert_eq!(leading_id("C-"), None);
         assert_eq!(leading_id("H-002"), Some("H-002".to_string()));
+    }
+
+    #[test]
+    fn escaped_pipes_stay_inside_a_cell() {
+        let text = "| Sequence ID | Sequence | Confidence |\n|---|---|---|\n| S-004 | 600\\|610 * 200.52x.* | High |\n";
+        let rows = parse_id_rows(text);
+        assert_eq!(rows[0].cells["sequence"], "600|610 * 200.52x.*");
+        assert_eq!(rows[0].cells["confidence"], "High");
     }
 
     #[test]

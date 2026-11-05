@@ -27,6 +27,16 @@ not a packaged software artifact.
   side, line ids that match the side, a license on every row, and a license
   notice file.
 
+### Added (phase-one conclusion)
+
+- Registered SRC-006 (2024 radiocarbon dating, CC BY 4.0) and SRC-007
+  (2022 Tablet C transcription, paywalled), claim C-004 (dating of Text D's
+  wood as a terminus post quem), observations O-003 to O-007, sequences S-002
+  to S-004, and hypothesis H-003. S-001 is superseded.
+- Added `docs/project-conclusion.md`, with a licensing survey showing that no
+  other tablet's transcription is currently redistributable.
+- The Markdown sync check now honours `\|` escapes in table cells.
+
 ### Added (analysis)
 
 - `analyze sequences --level part` compares individual signs, ignoring

@@ -1,2 +1,5 @@
 sequence_id,sequence,corpus_refs,source_refs,observation_refs,position_pattern,possible_function,confidence,status,notes
-S-001,none-recorded,corpus-wide,SRC-003,O-001,not-yet-analyzed,none-proposed,Low,draft,"Placeholder-free guardrail row: no repeated sequence has been promoted yet."
+S-001,none-recorded,corpus-wide,SRC-003,O-001,not-yet-analyzed,none-proposed,Low,superseded,Placeholder from before the transcription import; superseded by S-002 to S-004.
+S-002,200.52x.s–600,Text D / D,SRC-003,O-005,Da3.5-6 and Da3.14-15; both within the O-003 template,none-proposed,Medium,active,Exact element repeat among certain readings.
+S-003,7–600–7,Text D / D,SRC-003,O-005,Db4.12-14 and Db6.7-9 (sign level; Db4 has the ligature 7.10 in third position),none-proposed,Medium,active,SRC-003 section 4.3 compares 7-600-7.10 with Sb6; only that string is an exact match there.
+S-004,600/610 – * – 200.52x.*,Text D / D,SRC-003,O-003,"Four times in Da3 (Da3.3-5, 6-8, 9-11, 12-14)",none-proposed,High,promoted,"A template, not a literal string: * is any element. Described by SRC-003 section 4.3."

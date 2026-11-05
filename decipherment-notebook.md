@@ -25,12 +25,20 @@ Work from structure before meaning:
 |---|---|---|---|---|---|
 | O-001 | Text D / Da-Db | Side ordering has multiple theoretical possibilities in the modern Text D discussion. | Reverse boustrophedon at line level; side order unresolved | Medium | Use this as a warning against unqualified sequence claims. |
 | O-002 | Text D | Text D is the first seeded canonical object because open-access modern palaeographic analysis is available. | Text-specific | High | Corpus governance observation, not a semantic reading. |
+| O-003 | Text D / Da3 | Four instances of the template 600 or 610, any element, then a 200.52x ligature (Da3.3–5, 6–8, 9–11, 12–14), as in SRC-003 §4.3. | Line-internal | High | Reproduced exactly by `analyze find`; all readings certain. |
+| O-004 | Text D | The ligature 200.52x occurs five times, all in Da3; inverted 52x otherwise only in Da4. | Not order-dependent | High | From `analyze sequences --level part`. |
+| O-005 | Text D | Only two exact whole-element repeats among certain readings: 200.52x.s–600 (Da3) and 7–600 (Db4, Db6); the latter extends to 7–600–7 at sign level. | Line-internal | Medium | Depends on excluding doubtful readings. |
+| O-006 | Text D / Da1 | Da1 ends 522f–99 at Da1.18–19; the 99 is underlined (doubtful), and Barthel read 522. | Line-internal | Medium | SRC-003 compares Rb2; untestable without Text R. |
+| O-007 | Text D | 211 graphic elements under this parser vs 212 reported; the gap is Da7, printed with 15 elements but drawn with 16. | Not order-dependent | High | All 32 cited positions match. |
 
 ## 4. Repeated Sequences
 
 | Sequence ID | Sequence | Occurrences | Position Pattern | Possible Function | Confidence | Notes |
 |---|---|---:|---|---|---|---|
-| S-001 | none-recorded | 0 | not-yet-analyzed | none-proposed | Low | No repeated sequence has been registered yet. |
+| S-001 | none-recorded | 0 | not-yet-analyzed | none-proposed | Low | Superseded placeholder. |
+| S-002 | 200.52x.s–600 | 2 | Da3.5–6, Da3.14–15 | none-proposed | Medium | Exact repeat among certain readings. |
+| S-003 | 7–600–7 | 2 | Db4.12–14, Db6.7–9 (sign level) | none-proposed | Medium | SRC-003 compares 7–600–7.10 with Sb6. |
+| S-004 | 600/610 – * – 200.52x.* | 4 | Da3.3–5, 6–8, 9–11, 12–14 | none-proposed | High | A template; `*` is any element. |
 
 Unregistered leads (do not cite until registered):
 
@@ -54,6 +62,7 @@ Counts come from `cargo run -- analyze frequency` (add `--exact` to keep variant
 |---|---|---|---|---|---|
 | H-001 | Accurate palaeographic transcription must precede semantic decipherment attempts. | Validate every semantic reading against a named transcription source before promotion. | Adopted as governance rule. | High | Accepted |
 | H-002 | Reverse boustrophedon should be the default directionality assumption unless text-specific evidence says otherwise. | Require sequence observations to record reading-order assumption. | Active validation requirement. | Medium | Active |
+| H-003 | The Da3 template is a structured, list-like formula rather than an accident of one text. | Search other tablets for `600\|610 * 200.52x.*` and the 200.52x ligature. | Untestable: no other tablet's transcription is available under a usable license. | Low | Active |
 
 ## 7. Prior Proposal Tests
 

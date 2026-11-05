@@ -71,6 +71,15 @@ The project aims to be audit-ready rather than publication-grade from day one. N
 - Do not redistribute copyrighted scans, images, or long excerpts.
 - Do not build a database or image annotation pipeline until manual analysis shows a real need.
 
+## Status
+
+Phase one is complete. See `docs/project-conclusion.md` for what was
+established, why the project stops at one tablet, and what would reopen it.
+In short:
+- Text D is transcribed, verified against the typeset source, and analyzed.
+- No semantic reading is supported.
+- No other tablet's transcription is available under redistributable terms.
+
 ## Production-Ready Scope
 
 For v1, production-ready means the repository has enforceable research-governance tooling, traceable data files, documented source intake, and automated validation. It does not mean Rongorongo has been deciphered.
