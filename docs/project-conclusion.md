@@ -83,7 +83,7 @@ remaining work is not more code.
 
 ## 6. What would reopen it
 
-1. **Permission or an open release.** Ask the SRC-003 and SRC-007 authors
+1. **Permission or an open release** (draft request: `docs/permission-request-draft.md`). Ask the SRC-003 and SRC-007 authors
    (ERC project INSCRIBE, University of Bologna) whether their Tablet C and
    other transcriptions can be shared under an open license. Or ask CEIPP for
    permission to redistribute its digitized corpus. Any of these would let
