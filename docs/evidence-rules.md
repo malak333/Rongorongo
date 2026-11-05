@@ -68,6 +68,10 @@ by hand, so the audit re-applies the gates to every row already promoted.
   every id a table mentions must exist in the CSVs; and the Confidence,
   Reliability, and Sequence columns must match the CSV. Prose columns are not
   compared, so keep them faithful by review.
+- **Transcriptions.** If `data/transcriptions/lines.csv` exists, every row
+  must cite a registered source and corpus object, use one of that object's
+  sides, have a line id of the form `<side><number>`, name its license, and
+  parse into at least one element. `data/transcriptions/LICENSE.md` must exist.
 - **Project decisions are not claims.** A choice the project makes without a
   supporting source belongs in the notebook decision log, not in
   `data/claims.csv` with a borrowed citation.

@@ -2,7 +2,8 @@ use crate::model::{
     ClaimRecord, CorpusObject, HypothesisRecord, ObservationRecord, ReadingRecord, SequenceRecord,
     SourceRecord,
 };
-use crate::validate::ValidationReport;
+use crate::transcription::{self, TranscriptionLine};
+use crate::validate::{ValidationReport, TRANSCRIPTIONS_CSV};
 use crate::workflow::{self, KnownIds};
 use anyhow::{Context, Result};
 use serde::Serialize;
@@ -18,6 +19,7 @@ pub struct AuditSummary {
     pub sequences: usize,
     pub readings: usize,
     pub hypotheses: usize,
+    pub transcription_lines: usize,
     pub promoted_claims: usize,
     pub active_hypotheses: usize,
 }
@@ -39,6 +41,7 @@ pub struct Workspace {
     pub observations: Vec<ObservationRecord>,
     pub sequences: Vec<SequenceRecord>,
     pub readings: Vec<ReadingRecord>,
+    pub transcriptions: Vec<TranscriptionLine>,
 }
 
 impl Workspace {
@@ -51,6 +54,7 @@ impl Workspace {
             observations: read_csv(&root.join("data/observations.csv"))?,
             sequences: read_csv(&root.join("data/sequences.csv"))?,
             readings: read_csv(&root.join("data/readings.csv"))?,
+            transcriptions: read_transcriptions(root)?,
         })
     }
 }
@@ -313,6 +317,8 @@ pub fn audit_workspace(root: &Path, strict: bool) -> Result<AuditReport> {
         }
     }
 
+    check_transcriptions(report, &ws, &known);
+
     crate::docs_sync::check_markdown_sync(report, root, &ws)?;
 
     let summary = AuditSummary {
@@ -323,6 +329,7 @@ pub fn audit_workspace(root: &Path, strict: bool) -> Result<AuditReport> {
         sequences: ws.sequences.len(),
         readings: ws.readings.len(),
         hypotheses: ws.hypotheses.len(),
+        transcription_lines: ws.transcriptions.len(),
         promoted_claims: ws.claims.iter().filter(|c| c.status == "promoted").count(),
         active_hypotheses: ws
             .hypotheses
@@ -335,6 +342,55 @@ pub fn audit_workspace(root: &Path, strict: bool) -> Result<AuditReport> {
         validation,
         summary: Some(summary),
     })
+}
+
+/// Transcription rows must point at a registered object and source, use one of
+/// the object's sides, carry a license, and parse into at least one element.
+fn check_transcriptions(report: &mut ValidationReport, ws: &Workspace, known: &KnownIds) {
+    let sides: HashMap<&str, Vec<&str>> = ws
+        .corpus
+        .iter()
+        .map(|c| (c.catalog_id.as_str(), split_refs(&c.sides).collect()))
+        .collect();
+    for line in &ws.transcriptions {
+        let subject = format!("transcription {}", line.line_id);
+        check_refs(
+            report,
+            &subject,
+            "source_ref",
+            &line.source_ref,
+            &known.sources,
+            false,
+        );
+        check_refs(
+            report,
+            &subject,
+            "corpus_id",
+            &line.corpus_id,
+            &known.corpus,
+            false,
+        );
+        if let Some(object_sides) = sides.get(line.corpus_id.as_str()) {
+            if !object_sides.contains(&line.side.as_str()) {
+                report.error(format!(
+                    "{subject} side={} is not one of {}'s sides ({})",
+                    line.side,
+                    line.corpus_id,
+                    object_sides.join("; ")
+                ));
+            }
+        }
+        let number = line.line_id.strip_prefix(line.side.as_str());
+        if !number.is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit())) {
+            report.error(format!(
+                "{subject} line_id must be the side followed by a line number (e.g. {}1)",
+                line.side
+            ));
+        }
+        if transcription::parse_line(&line.line_id, &line.raw_text).is_empty() {
+            report.error(format!("{subject} raw_text contains no graphic elements"));
+        }
+    }
 }
 
 /// Rank used to compare confidence and reliability labels. `Mixed` sources
@@ -451,6 +507,15 @@ fn check_refs(
     }
     if !any {
         report.error(format!("{subject} {column} is empty"));
+    }
+}
+
+pub fn read_transcriptions(root: &Path) -> Result<Vec<TranscriptionLine>> {
+    let path = root.join(TRANSCRIPTIONS_CSV);
+    if path.exists() {
+        read_csv(&path)
+    } else {
+        Ok(Vec::new())
     }
 }
 

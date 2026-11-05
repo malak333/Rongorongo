@@ -120,3 +120,29 @@ fn e2e_intake_template_and_promotion_gates_work() {
         .success()
         .stdout(predicate::str::contains("\"ready\": true"));
 }
+
+#[test]
+fn e2e_text_d_transcription_parses_and_analyzes() {
+    let mut list = Command::cargo_bin("rongorongo").unwrap();
+    list.args(["transcriptions", "list"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Da1"))
+        .stdout(predicate::str::contains("Db6"));
+
+    let mut frequency = Command::cargo_bin("rongorongo").unwrap();
+    frequency
+        .args(["analyze", "frequency", "--corpus", "Text D / D"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("CC BY-NC 4.0"));
+
+    let mut sequences = Command::cargo_bin("rongorongo").unwrap();
+    sequences
+        .args(["analyze", "sequences"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "sequence\tlength\tcount\tlocations",
+        ));
+}

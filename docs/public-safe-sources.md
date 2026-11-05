@@ -19,6 +19,20 @@ This repository should remain safe to publish publicly.
 - Paywalled text pasted into repository files.
 - Images or transcriptions with unclear redistribution rights.
 
+## Openly Licensed Transcriptions
+
+Transcriptions may be committed under `data/transcriptions/` when all of these hold:
+
+- The source states an open license that permits redistribution (for example
+  CC BY or CC BY-NC). "Freely readable" or "open access" alone is not enough.
+- `data/transcriptions/LICENSE.md` names the source, rights holder, license,
+  any use restriction, and what was changed. The audit fails if it is missing.
+- Every row records its `source_ref` and `license`.
+- Lines are copied verbatim, with known capture losses documented. Derived
+  data is never written back into the transcription rows.
+- Non-commercial (NC) material stays in that directory and is never folded
+  into files covered by the repository's CC BY 4.0 or MIT terms.
+
 ## Source Notes
 
 If private or restricted material is needed for personal review, keep it outside

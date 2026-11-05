@@ -16,6 +16,17 @@ not a packaged software artifact.
 - Added machine-readable claims and observations registers.
 - Added automated E2E coverage for the source-to-claim-to-hypothesis workflow.
 
+### Added (transcriptions)
+
+- Imported the Text D (Échancrée tablet) transcription from Lastilla et al.
+  2022 (SRC-003) verbatim: 14 lines in `data/transcriptions/lines.csv`, under
+  CC BY-NC 4.0 with a notice in `data/transcriptions/LICENSE.md`.
+- Added a notation parser and `transcriptions list|elements` and
+  `analyze frequency|sequences` commands. They report structure only.
+- The audit checks transcription rows: known source and corpus object, a valid
+  side, line ids that match the side, a license on every row, and a license
+  notice file.
+
 ### Changed
 
 - `audit --strict` now enforces the evidence rules instead of only checking
@@ -41,6 +52,10 @@ not a packaged software artifact.
   the notebook decision log.
 
 ### Safety
+
+- Amended the public-safe policy to allow openly licensed transcriptions under
+  `data/transcriptions/` with a license notice. NC data is kept separate from
+  CC BY 4.0 and MIT material, and is excluded from the Cargo package.
 
 - Documented that third-party scans, images, bulk transcriptions, long excerpts,
   private materials, and restricted source files must not be committed.

@@ -32,15 +32,19 @@ Work from structure before meaning:
 |---|---|---:|---|---|---|---|
 | S-001 | none-recorded | 0 | not-yet-analyzed | none-proposed | Low | No repeated sequence has been registered yet. |
 
-Unregistered leads (not yet verified against the source; do not cite):
+Unregistered leads (do not cite until registered):
 
-- A 522-99 pattern discussed in SRC-003 in relation to Text D and a comparison with Text R. Verify the passage, add Text R to the corpus index, then register it as a sequence.
+- **522-99.** The imported transcription confirms `522f–99` closes line Da1 (parser elements Da1.17–18). An earlier note placed it at Da1.18–19; the difference is a numbering question not yet reconciled (see the 208 vs 212 element count in `data/transcriptions/LICENSE.md`). SRC-003's comparison with Text R remains unverified because Text R is not in the corpus index.
+- **Exact element repeats in Text D** (`cargo run -- analyze sequences`): `200.52x.s–600` (Da3.5–6, Da3.14–15), `2V.3–730` (Da5.2–3, Da5.10–11), `7–600` (Db4.12–13, Db6.7–8). These are exact matches only; uncertain, ambiguous, and unparsed elements are excluded.
+- **Da3 structure.** Da3 alternates `600` with compounds built on `200.52x` (`200.52x.s`, `200.52x.52`, `200.52x.69`). This is visible by eye but is not an exact element repeat, so the sequence command does not report it. A part-level comparison would be needed to test it.
 
 ## 5. Sign Frequency
 
 | Sign | Count | Corpus Scope | Position Notes | Interpretation Risk |
 |---|---:|---|---|---|
-| 522 | not-yet-counted | Text D seed only | Discussed in relation to Da1.18-19 | Do not infer meaning from isolated comparison |
+| 522 | 2 | Text D (SRC-003 transcription) | Da1.17 (`522f`, followed by `99`); Db5.1 (`522f.700`) | Do not infer meaning from isolated comparison |
+
+Counts come from `cargo run -- analyze frequency` (add `--exact` to keep variant suffixes such as `522f`). The command is the source of truth, so this table records only signs under discussion. Underlined doubtful readings in the source are not captured, so treat every count as provisional.
 
 ## 6. Structural Hypotheses
 

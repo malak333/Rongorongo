@@ -19,6 +19,9 @@ pub const OBSERVATIONS: &str = "observation_id,corpus_id,source_refs,observation
 pub const SEQUENCES: &str = "sequence_id,sequence,corpus_refs,source_refs,observation_refs,position_pattern,possible_function,confidence,status,notes\nS-001,none-recorded,D,SRC-001,O-001,fixture,fixture,Low,draft,fixture\n";
 pub const READINGS: &str = "reading_id,sign_or_sequence,proposed_meaning,evidence_refs,corpus_refs,observation_refs,alternative_explanations,confidence,status,notes\nR-001,none,none-proposed,SRC-001,corpus-wide,O-001,Structural explanations remain prior,Low,draft,fixture\n";
 
+pub const TRANSCRIPTIONS: &str = "line_id,corpus_id,side,source_ref,license,raw_text,notes\nDa1,D,Da,SRC-001,CC-BY-NC-4.0,]1–2–3–•–1–2–3[,fixture\nDb1,D,Db,SRC-001,CC-BY-NC-4.0,]600–400/600–2••–3•6–1–2[,fixture\n";
+pub const TRANSCRIPTIONS_LICENSE: &str = "# Fixture license\n";
+
 pub const DOSSIER: &str = "\
 # Dossier
 
@@ -66,6 +69,8 @@ impl Fixture {
         fixture.write("data/observations.csv", OBSERVATIONS);
         fixture.write("data/sequences.csv", SEQUENCES);
         fixture.write("data/readings.csv", READINGS);
+        fixture.write("data/transcriptions/lines.csv", TRANSCRIPTIONS);
+        fixture.write("data/transcriptions/LICENSE.md", TRANSCRIPTIONS_LICENSE);
         fixture
     }
 

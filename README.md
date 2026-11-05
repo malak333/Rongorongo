@@ -25,6 +25,7 @@ The project has two phases:
 - `data/corpus-index.csv`: Manual index of canonical Rongorongo objects and transcription sources.
 - `data/source-registry.csv`: Source provenance and reliability table.
 - `data/hypotheses.csv`: Machine-readable register of working hypotheses and tests.
+- `data/transcriptions/lines.csv`: Verbatim transcription lines, one row per line. **Separately licensed:** see `data/transcriptions/LICENSE.md` (Text D is CC BY-NC 4.0, non-commercial use only).
 - `docs/source-intake.md`: Intake workflow for adding public-safe sources.
 - `docs/testing-strategy.md`: Evidence and software testing expectations.
 
@@ -43,6 +44,10 @@ cargo run -- readings list
 cargo run -- intake source --next-id SRC-006
 cargo run -- promote claim C-002
 cargo run -- promote hypothesis H-002
+cargo run -- transcriptions list
+cargo run -- transcriptions elements --problems
+cargo run -- analyze frequency
+cargo run -- analyze sequences
 ```
 
 Use `./scripts/ci.sh` as the local release gate. This repository intentionally does not use GitHub Actions.

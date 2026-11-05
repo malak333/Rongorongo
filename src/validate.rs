@@ -74,9 +74,10 @@ pub const RECORD_STATUSES: &[&str] = &["draft", "active", "promoted", "rejected"
 struct CsvSpec {
     path: &'static str,
     headers: &'static [&'static str],
-    /// Columns that must be non-empty. Columns ending in `_id` (and
-    /// `catalog_id`) must also be unique.
+    /// Columns that must be non-empty.
     required_columns: &'static [&'static str],
+    /// Primary-key column; values must be unique within the file.
+    id_column: &'static str,
     confidence_columns: &'static [&'static str],
     reliability_columns: &'static [&'static str],
     statuses: Option<&'static [&'static str]>,
@@ -97,6 +98,7 @@ const CSV_SPECS: &[CsvSpec] = &[
             "notes",
         ],
         required_columns: &["object_name", "catalog_id", "transcription_source"],
+        id_column: "catalog_id",
         confidence_columns: &["inclusion_confidence"],
         reliability_columns: &["source_reliability"],
         statuses: None,
@@ -117,6 +119,7 @@ const CSV_SPECS: &[CsvSpec] = &[
             "notes",
         ],
         required_columns: &["source_id", "citation", "contribution", "limits", "access"],
+        id_column: "source_id",
         confidence_columns: &[],
         reliability_columns: &["reliability"],
         statuses: None,
@@ -136,6 +139,7 @@ const CSV_SPECS: &[CsvSpec] = &[
             "notes",
         ],
         required_columns: &["hypothesis_id", "claim", "test"],
+        id_column: "hypothesis_id",
         confidence_columns: &["confidence"],
         reliability_columns: &[],
         statuses: Some(HYPOTHESIS_STATUSES),
@@ -153,6 +157,7 @@ const CSV_SPECS: &[CsvSpec] = &[
             "notes",
         ],
         required_columns: &["claim_id", "claim"],
+        id_column: "claim_id",
         confidence_columns: &["confidence"],
         reliability_columns: &[],
         statuses: Some(CLAIM_STATUSES),
@@ -170,6 +175,7 @@ const CSV_SPECS: &[CsvSpec] = &[
             "notes",
         ],
         required_columns: &["observation_id", "observation", "reading_order_assumption"],
+        id_column: "observation_id",
         confidence_columns: &["confidence"],
         reliability_columns: &[],
         statuses: Some(RECORD_STATUSES),
@@ -189,6 +195,7 @@ const CSV_SPECS: &[CsvSpec] = &[
             "notes",
         ],
         required_columns: &["sequence_id", "sequence"],
+        id_column: "sequence_id",
         confidence_columns: &["confidence"],
         reliability_columns: &[],
         statuses: Some(RECORD_STATUSES),
@@ -208,11 +215,40 @@ const CSV_SPECS: &[CsvSpec] = &[
             "notes",
         ],
         required_columns: &["reading_id", "sign_or_sequence"],
+        id_column: "reading_id",
         confidence_columns: &["confidence"],
         reliability_columns: &[],
         statuses: Some(RECORD_STATUSES),
     },
 ];
+
+pub const TRANSCRIPTIONS_CSV: &str = "data/transcriptions/lines.csv";
+pub const TRANSCRIPTIONS_LICENSE: &str = "data/transcriptions/LICENSE.md";
+
+const TRANSCRIPTION_SPEC: CsvSpec = CsvSpec {
+    path: TRANSCRIPTIONS_CSV,
+    headers: &[
+        "line_id",
+        "corpus_id",
+        "side",
+        "source_ref",
+        "license",
+        "raw_text",
+        "notes",
+    ],
+    required_columns: &[
+        "line_id",
+        "corpus_id",
+        "side",
+        "source_ref",
+        "license",
+        "raw_text",
+    ],
+    id_column: "line_id",
+    confidence_columns: &[],
+    reliability_columns: &[],
+    statuses: None,
+};
 
 const MARKDOWN_FILES: &[&str] = &[
     "README.md",
@@ -235,6 +271,17 @@ pub fn validate_workspace(root: &Path, strict: bool) -> Result<ValidationReport>
 
     for spec in CSV_SPECS {
         check_csv(&mut report, root, spec, strict)?;
+    }
+
+    // Transcriptions are optional, but if present they must carry a license notice.
+    if root.join(TRANSCRIPTIONS_CSV).exists() {
+        check_csv(&mut report, root, &TRANSCRIPTION_SPEC, strict)?;
+        report.checked_files += 1;
+        if !root.join(TRANSCRIPTIONS_LICENSE).is_file() {
+            report.error(format!(
+                "{TRANSCRIPTIONS_CSV} is present but {TRANSCRIPTIONS_LICENSE} is missing"
+            ));
+        }
     }
 
     Ok(report)
@@ -347,7 +394,7 @@ fn check_csv(
                 report.error(format!("{label} row {row} has empty {column}"));
                 continue;
             }
-            if column.ends_with("_id") && !seen_ids.insert(format!("{column}:{field}")) {
+            if *column == spec.id_column && !seen_ids.insert(field.to_string()) {
                 report.error(format!("{label} row {row} duplicates {column}={field}"));
             }
         }

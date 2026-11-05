@@ -17,3 +17,6 @@ cargo run -- readings list
 cargo run -- intake source --next-id SRC-006
 cargo run -- promote claim C-002
 cargo run -- promote hypothesis H-002
+cargo run -- transcriptions list
+cargo run -- analyze frequency
+cargo run -- analyze sequences

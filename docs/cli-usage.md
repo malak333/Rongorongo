@@ -28,6 +28,25 @@ cargo run -- promote claim C-002
 cargo run -- promote hypothesis H-002
 ```
 
+## Transcriptions And Analysis
+
+```sh
+cargo run -- transcriptions list
+cargo run -- transcriptions elements --line Da3
+cargo run -- transcriptions elements --problems
+cargo run -- analyze frequency
+cargo run -- analyze frequency --exact
+cargo run -- analyze sequences --min-length 2 --min-count 2
+```
+
+Transcription lines are stored verbatim. Elements, sign counts, and repeats are derived each time, so changing the parser never rewrites source data. The notation the parser understands is documented at the top of `src/transcription.rs`.
+
+- `transcriptions elements` shows how each line splits into graphic elements and flags each as `uncertain` (`•`), `ambiguous` (`/`), `unparsed`, `lacuna`, or `irregular-separator`.
+- `analyze frequency` counts signs by Barthel base number. `count` is certain single readings; `possible` is readings marked `•` or offered as one of several alternatives. Signs that do not fit the notation are listed and excluded.
+- `analyze sequences` reports maximal exact repeats of elements within a line. Runs never cross a line or an uncertain, ambiguous, or unparsed element, so uncertainty cannot manufacture a repeat. Positions are this parser's 1-based element indices and may differ from the source's numbering.
+
+These commands report structure only. They never propose meanings. Output derived from licensed transcription data carries that data's attribution line.
+
 The table output is for humans. JSON output is available where local scripts or downstream tooling need structured data. `./scripts/ci.sh` is the complete local CLI gate; this repository intentionally does not use GitHub Actions.
 
 ## Intake And Promotion

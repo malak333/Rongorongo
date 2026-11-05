@@ -17,7 +17,9 @@ separated.
 - Do not present fluent translations or high-confidence semantic claims without
   strong evidence.
 - Do not add copyrighted scans, images, book chapters, article PDFs, long
-  excerpts, or bulk copied transcriptions.
+  excerpts, or bulk copied transcriptions. The one exception is openly
+  licensed transcriptions under `data/transcriptions/`, following
+  `docs/public-safe-sources.md`.
 - Prefer source links, catalog references, short quotations, and original
   summaries.
 - Respect Rapa Nui and Eastern Polynesian context; broader comparison should be

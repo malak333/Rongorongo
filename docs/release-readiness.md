@@ -16,7 +16,9 @@ Related production-readiness docs:
 - No credentials, tokens, private keys, account exports, or private contact
   details are committed.
 - No copyrighted scans, images, article PDFs, book chapters, bulk
-  transcriptions, or long excerpts are committed.
+  transcriptions, or long excerpts are committed. Openly licensed
+  transcriptions under `data/transcriptions/` with a `LICENSE.md` notice are
+  the documented exception (see `docs/public-safe-sources.md`).
 - Any third-party material that remains in the repository has clear license,
   public-domain, or permission evidence.
 - Source records are linked or summarized rather than redistributed.
